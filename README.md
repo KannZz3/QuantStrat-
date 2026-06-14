@@ -1,5 +1,3 @@
-可以，这版逻辑已经对。下面我把它整理成**真正适合 GitHub README.md 的最终精炼版**：标题用 Markdown、分类汇总表改成标准 Markdown 表格、目录结构放进代码块，中英文保持对照但不啰嗦。依据仍然来自原 PDF 的项目概述、数据可用性、候选论文列表和 AI/Git/Quarto/BibTeX 可复现流程说明。
-
 # Summer 2026 Financial Engineering Research Projects
 
 ## 论文分类与项目实现框架 / Paper Classification and Implementation Framework
