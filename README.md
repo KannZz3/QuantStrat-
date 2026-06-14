@@ -1,96 +1,208 @@
-# 比特币统一多维定价与算法模型 (QuantStrat)
+# Summer 2026 Financial Engineering Research Projects
 
-本项目致力于实现并优化一个**比特币（BTC）统一多维动态下沿估值模型**。模型融合了链上基本面锚定与行为经济学折价机制，基于三篇顶尖学术论文构建核心定价算法：
+## 论文分类与项目实现框架 / Paper Classification and Implementation Framework
 
-1. **Bhambhwani, Delikouras, and Korniotis (2019)** — 链上基本面与网络价值锚定
-2. **Biais et al. (2023)** — 均衡交易便利收益与成本折价层
-3. **Liu and Tsyvinski (2021)** — 动量与注意力风险收益折价层
+## 1. 项目定位 / Project Positioning
 
----
+本项目是一个量化金融论文复现项目，目标是通过复现候选论文，训练完整的量化研究流程：文献理解、数据处理、模型实现、结果复现、稳健性检验和研究报告输出。
 
-## 1. 核心定价算法与框架
+This is a quantitative finance research replication project. Its goal is to train the full research workflow: literature review, data processing, model implementation, result replication, robustness testing, and research reporting.
 
-模型采用**“基本面价值锚 + 双重行为折价”**的级联定价结构：
+## 2. 分类逻辑 / Classification Logic
 
-$$\text{Strict Valuation Point} = \text{BDK Fundamental Anchor} \times \text{Biais Discount} \times \text{Liu-Tsyvinski Discount}$$
+本文按照论文的核心研究问题进行分类，而不是单纯按照资产类别划分。
 
-```mermaid
-graph TD
-    A[加密货币定价三支柱] --> B(BDK 链上基本面锚)
-    A --> C(Biais 均衡交易折价)
-    A --> D(Liu-Tsyvinski 风险注意力折价)
-    
-    B --> E[动态下沿估值 Strict Point]
-    C --> E
-    D --> E
-    
-    E --> F[下沿估值区间: Strict Point ± Band Width]
+Papers are classified by their core research questions rather than by asset class alone.
+
+## 3. 论文分类 / Paper Classification
+
+### 3.1 动量 / 反转 / 趋势跟踪
+
+### Momentum / Reversal / Trend-Following
+
+核心主题：价格延续、反转、趋势规则、波动率调整、状态切换。
+Core focus: price continuation, reversal, trend rules, volatility adjustment, and regime switching.
+
+1. Ammann, Moellenbeck, and Schmid (2011) — Feasible Momentum Strategies in the US Stock Market
+2. Baltas and Kosowski (2012) — Improving Time-Series Momentum Strategies: The Role of Trading Signals and Volatility Estimators
+3. Caporale and Plastun (2020) — Momentum Effects in the Cryptocurrency Market After One-Day Abnormal Returns
+4. Dobrynskaya (2021) — Cryptocurrency Momentum and Reversal
+5. Dudler, Gmuer, and Malamud (2014) — Risk Adjusted Time Series Momentum
+6. Karassavidis, Kateris, and Ioannidis (2025) — Quantitative Evaluation of Volatility-Adaptive Trend-Following Models in Cryptocurrency Markets
+7. Li et al. (2021) — MAX Momentum in Cryptocurrency Markets
+8. Tayal (2009) — Regime Switching and Technical Trading with Dynamic Bayesian Networks in High-Frequency Stock Markets
+9. Zakamulin and Giner (2022) — Optimal Trend Following Rules in Two-State Regime-Switching Models
+
+### 3.2 机器学习 / AI / 预测模型
+
+### Machine Learning / AI / Forecasting Models
+
+核心主题：机器学习预测、资产配置、强化学习、模型比较。
+Core focus: machine learning prediction, asset allocation, reinforcement learning, and model comparison.
+
+1. Afolabi et al. (2017) — Hierarchical Meta-Learning in Time Series Forecasting for Improved Interference-Less Machine Learning
+2. Babaei, Giudici, and Raffinetti (2022) — Explainable Artificial Intelligence for Crypto Asset Allocation
+3. Campisi, Muzzioli, and De Baets (2024) — A Comparison of Machine Learning Methods for Predicting the Direction of the US Stock Market on the Basis of Volatility Indices
+4. Chandak et al. (2019) — Learning Action Representations for Reinforcement Learning
+5. Gu, Kelly, and Xiu (2020) — Empirical Asset Pricing via Machine Learning
+6. Shen, Jiang, and Zhang (2012) — Stock Market Forecasting Using Machine Learning Algorithms
+7. Tran, Pham-Hi, and Bui (2023) — Optimizing Automated Trading Systems with Deep Reinforcement Learning
+
+### 3.3 加密货币定价 / 基本面 / 风险收益
+
+### Cryptocurrency Pricing / Fundamentals / Risk and Return
+
+核心主题：加密货币基本面、均衡定价、风险收益特征。
+Core focus: cryptocurrency fundamentals, equilibrium pricing, and risk-return characteristics.
+
+1. Bhambhwani, Delikouras, and Korniotis (2019) — Do Fundamentals Drive Cryptocurrency Prices?
+2. Biais et al. (2023) — Equilibrium Bitcoin Pricing
+3. Liu and Tsyvinski (2021) — Risks and Returns of Cryptocurrency
+
+### 3.4 市场微观结构 / 高频交易 / 算法交易
+
+### Market Microstructure / High-Frequency Trading / Algorithmic Trading
+
+核心主题：高频数据、市场机制、订单执行、算法交易。
+Core focus: high-frequency data, market mechanisms, order execution, and algorithmic trading.
+
+1. Bollerslev, Litvinova, and Tauchen (2006) — Leverage and Volatility Feedback Effects in High-Frequency Data
+2. Funie, Salmon, and Luk (2014) — A Hybrid Genetic-Programming Swarm-Optimisation Approach for Examining the Nature and Stability of High Frequency Trading Strategies
+3. Guilbaud and Pham (2015) — Optimal High-Frequency Trading in a Pro Rata Microstructure with Predictive Information
+4. Kearns and Nevmyvaka (2013) — Machine Learning for Market Microstructure and High Frequency Trading
+5. Labadie, Lehalle, et al. (2010) — Optimal Algorithmic Trading and Market Microstructure
+6. Lehalle (2013) — Market Microstructure Knowledge Needed for Controlling an Intra-Day Trading Process
+
+### 3.5 市场异象 / Alpha 衰减 / 技术分析有效性
+
+### Market Anomalies / Alpha Decay / Technical Analysis
+
+核心主题：市场异象、技术分析收益、公开研究后的 alpha 衰减。
+Core focus: market anomalies, technical-analysis profitability, and alpha decay after publication.
+
+1. Chordia, Subrahmanyam, and Tong (2014) — Have Capital Market Anomalies Attenuated in the Recent Era of High Liquidity and Trading Activity?
+2. Han, Yang, and Zhou (2013) — A New Anomaly: The Cross-Sectional Profitability of Technical Analysis
+3. McLean and Pontiff (2016) — Does Academic Research Destroy Stock Return Predictability?
+
+### 3.6 波动率模型 / 时间序列检验
+
+### Volatility Modeling / Time-Series Model Testing
+
+核心主题：波动率模型设定、统计检验、时间序列模型验证。
+Core focus: volatility model specification, statistical testing, and time-series model validation.
+
+1. Hong and Lee (2017) — A General Approach to Testing Volatility Models in Time Series
+
+## 4. 分类汇总 / Classification Summary
+
+| Category                                             | Count | Main Use                  |
+| ---------------------------------------------------- | ----: | ------------------------- |
+| 动量 / 反转 / 趋势跟踪 Momentum / Reversal / Trend-Following |     9 | 策略复现 Strategy replication |
+| 机器学习 / AI / 预测模型 ML / AI / Forecasting               |     7 | 模型构建 Model building       |
+| 加密货币定价 / 风险收益 Crypto Pricing / Risk and Return       |     3 | 资产定价 Asset pricing        |
+| 市场微观结构 / 高频交易 Market Microstructure / HFT            |     6 | 高频与执行 HFT and execution   |
+| 市场异象 / Alpha 衰减 Market Anomalies / Alpha Decay       |     3 | 信号衰减 Signal decay         |
+| 波动率模型 / 时间序列检验 Volatility / Time-Series Testing      |     1 | 模型检验 Model testing        |
+
+Total: 29 papers.
+
+## 5. 项目实现流程 / Implementation Workflow
+
+### Step 1: 选择论文 / Select Paper
+
+根据数据可得性、方法难度、复现可行性和扩展空间选择论文。
+Select a paper based on data availability, methodological difficulty, replication feasibility, and extension potential.
+
+### Step 2: 拆解论文 / Decompose Paper
+
+明确研究问题、样本区间、数据频率、变量定义、模型方法、组合构建和核心结论。
+Identify the research question, sample period, data frequency, variable definitions, methodology, portfolio construction, and main conclusions.
+
+### Step 3: 构建数据管道 / Build Data Pipeline
+
+完成数据获取、清洗、缺失值处理、收益计算、特征构建和版本管理。
+Build the data pipeline: acquisition, cleaning, missing-value handling, return calculation, feature construction, and version control.
+
+### Step 4: 复现核心方法 / Replicate Core Method
+
+复现论文中的信号、模型、组合、回测或统计检验。
+Replicate the paper’s signals, models, portfolios, backtests, or statistical tests.
+
+### Step 5: 结果对比 / Compare Results
+
+将复现结果与原论文结果比较，并解释差异来源。
+Compare replicated results with the original paper and explain sources of differences.
+
+### Step 6: 稳健性检验 / Robustness Tests
+
+检验不同样本、参数、交易成本、资产池和市场阶段下的结果稳定性。
+Test robustness across samples, parameters, transaction costs, asset universes, and market regimes.
+
+### Step 7: 扩展研究 / Research Extension
+
+可加入新样本、新资产、不同信号、波动率调整、状态切换或 alpha 衰减检验。
+Extend the research with new samples, new assets, alternative signals, volatility adjustment, regime filters, or alpha decay tests.
+
+### Step 8: 最终输出 / Final Output
+
+形成 README、代码、数据说明、图表、复现结果、稳健性检验和研究报告。
+Deliver a README, codebase, data documentation, figures, replication results, robustness tests, and final research report.
+
+## 6. 推荐目录结构 / Suggested Repository Structure
+
+```text
+project-root/
+├── README.md
+├── data/
+│   ├── raw/
+│   └── processed/
+├── notebooks/
+│   ├── 01_data_cleaning.ipynb
+│   ├── 02_replication.ipynb
+│   └── 03_robustness.ipynb
+├── src/
+│   ├── data_loader.py
+│   ├── signals.py
+│   ├── models.py
+│   ├── backtest.py
+│   └── metrics.py
+├── results/
+│   ├── figures/
+│   └── tables/
+├── reports/
+│   └── final_report.qmd
+└── requirements.txt
 ```
 
-### 1.1 BDK 链上基本面价值锚 (Bhambhwani et al., 2019)
-通过算力（Hashrate）与网络规模（Active Addresses）锚定比特币的底层生产力与网络价值。在设定算力与用户规模回落的压力情景时，基本面锚定价值计算公式为：
+## 7. 关键研究控制 / Key Research Controls
 
-$$V_{\text{BDK}} = P_{\text{current}} \times \left(\frac{\text{HR}_{\text{stress}}}{\text{HR}_{\text{current}}}\right)^{\beta_{\text{hashrate}}} \times \left(\frac{\text{AA}_{\text{stress}}}{\text{AA}_{\text{current}}}\right)^{\beta_{\text{network}}}$$
+1. 未来函数 / Look-ahead Bias
+   Only use information available at the decision time.
 
-*   其中 $\beta_{\text{hashrate}} = 1.298$ 刻画算力弹性，$\beta_{\text{network}} = 1.802$ 刻画活跃地址网络效应弹性。
+2. 幸存者偏差 / Survivorship Bias
+   Avoid using only surviving assets.
 
----
+3. 过拟合 / Overfitting
+   Control excessive parameter tuning and model complexity.
 
-### 1.2 Biais 均衡收益折价层 (Biais et al., 2023)
-评估网络交易的实际效益与均衡风险。对以下四大因子计算滚动 $Z$-Score 并进行动态加权，生成 $S_{\text{Biais}}$ 评分：
+4. 交易成本 / Transaction Costs
+   Evaluate whether results survive realistic costs.
 
-$$S_{\text{Biais}} = w_1 \cdot Z_{\text{Benefit}} + w_2 \cdot Z_{\text{Cost}} + w_3 \cdot Z_{\text{Access}} + w_4 \cdot Z_{\text{Crash}}$$
+5. 数据挖掘 / Data Snooping
+   Avoid reporting only the best-performing specification.
 
-*   **交易收益 ($Z_{\text{Benefit}}$)**：由交易笔数与转账金额的均值表达（权重 $0.40$）。
-*   **交易成本 ($Z_{\text{Cost}}$)**：由链上平均手续费表达（取负数，结合转账量平抑，权重 $0.20$）。
-*   **市场渠道 ($Z_{\text{Access}}$)**：由 ETF 资金流表达（权重 $0.20$）。
-*   **崩盘风险 ($Z_{\text{Crash}}$)**：由滚动实现波动率与最大回撤表达（取负数，权重 $0.20$）。
+6. 样本外检验 / Out-of-Sample Testing
+   Validate whether results hold outside the original sample.
 
-通过 $S_{\text{Biais}}$ 划分阶梯阈值，动态输出折价系数（如通过阈值映射为 `0.92` 的折价因子）。
+7. 可复现性 / Reproducibility
+   Ensure code, data processing, parameters, and results can be reproduced.
 
----
+## 8. 最终目标 / Final Objective
 
-### 1.3 Liu-Tsyvinski 动量与注意力折价层 (Liu & Tsyvinski, 2021)
-评估市场动量与投资者注意力的非对称溢价。对四大因子进行动态加权，生成 $S_{\text{Liu}}$ 评分：
+本项目最终目标是形成一个清晰、严谨、可复现的量化金融研究项目。
 
-$$S_{\text{Liu}} = w_1' \cdot Z_{\text{Momentum}} + w_2' \cdot Z_{\text{Attention}} + w_3' \cdot Z_{\text{Neg\_Attention}} + w_4' \cdot Z_{\text{Activity}}$$
+The final goal is to produce a clear, rigorous, and reproducible quantitative finance research project.
 
-*   **市场动量 ($Z_{\text{Momentum}}$)**：由 7D/14D/28D 比特币对数收益率表征（权重 $0.40$）。
-*   **普通注意力 ($Z_{\text{Attention}}$)**：由维基百科页面浏览量（表征大众注意力）的滚动 $Z$-Score 刻画（权重 $0.25$）。
-*   **负面注意力 ($Z_{\text{Neg\_Attention}}$)**：由负面话题访问量占比（表征市场负向情绪）的滚动 $Z$-Score 刻画（取负数，权重 $0.20$）。
-*   **活跃增长 ($Z_{\text{Activity}}$)**：由网络活跃度百分比变化率刻画（权重 $0.15$）。
+理想成果应回答五个问题：原论文研究什么、如何实现、是否能复现、结论是否稳健、可以如何扩展。
 
-通过 $S_{\text{Liu}}$ 划分阶梯阈值，动态输出折价系数（如通过阈值映射为 `0.95` 的折价因子）。
-
----
-
-## 2. 定价模型降级与区间宽度算法
-
-模型引入了基于数据质量与验证状态的**动态定价降级（Model Downgrade）**与**区间宽度调整（Band Width Adjustment）**机制：
-*   **模型状态降级**：
-    *   **Full Model**：所有模块（BDK + Biais + Liu）全部通过验证，采用最窄区间宽度基准 $\text{Band\_Width} = 0.05$。
-    *   **Core / Reduced Model**：仅核心锚与部分扩展模块通过验证，区间宽度基准放宽至 $0.10 \sim 0.15$。
-    *   **BDK Only**：仅基本面锚有效，折价层未通过，使用较宽区间基准 $0.18$。
-*   **样本缺失惩罚**：有效观测天数小于 90 天时，对区间宽度追加 $0.03 \sim 0.05$ 的惩罚项 $\text{Width\_Addon}$，最终估值下沿区间为：
-    
-$$\text{Price Range} = \text{Strict Point} \times (1 \pm \text{Band\_Width})$$
-
----
-
-## 3. 定价情景设计
-
-模型依据不同链上压力级别，设计了四大估值下沿情景：
-1.  **基础压力 (Base)**：算力与活跃地址回落到最近观测样本的 30% 分位数。
-2.  **核心下沿 (Core)**：算力与活跃地址回落到最近观测样本的 15% 分位数。
-3.  **严重压力 (Severe)**：算力与活跃地址回落到最近观测样本的 5% 分位数。
-4.  **极端尾部 (Extreme)**：在 5% 分位数基础上进一步下压，模拟极度恐慌状态下的极限价格底部。
-
----
-
-## 4. 项目模块与代码目录
-
-*   `btc_unified_pricing_model/`
-    *   `pricing.py`：**【核心算法所在】**实现基本面锚定公式、Biais 分数计算、Liu-Tsyvinski 分数计算、加权分配以及四类压力情景下的区间输出。
-    *   `validator.py`：负责学术共识交叉验证（过滤未经验证的数据，确保定价入参的数据可信度）。
-    *   `processor.py`：执行特征转换（对数收益、注意力 Ratio 等）。
-    *   `pipeline.py` / `cli.py`：串联整个定价计算工作流。
+The final output should answer five questions: what the original paper studies, how it is implemented, whether the results can be replicated, whether the conclusions are robust, and how the research can be extended.
