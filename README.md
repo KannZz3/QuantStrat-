@@ -1,102 +1,96 @@
-# BTC 统一多维定价与估值模型项目 (QuantStrat)
+# 比特币统一多维定价与算法模型 (QuantStrat)
 
-本项目是一个量化金融研究与实现项目，实现并优化了一个**比特币（BTC）统一多维动态下沿估值模型**。该模型基于三大经典学术框架（Bhambhwani et al. 2019 / Biais et al. 2023 / Liu & Tsyvinski 2021），对 BTC 链上基本面、市场便利性以及投资者注意力进行多维度量化评估。
+本项目致力于实现并优化一个**比特币（BTC）统一多维动态下沿估值模型**。模型融合了链上基本面锚定与行为经济学折价机制，基于三篇顶尖学术论文构建核心定价算法：
 
----
-
-## 1. 项目是做什么用的？
-
-本项目旨在通过**多源公网数据抓取、严格的学术一致性交叉验证、动态风险折价与压力测试**，计算出比特币在不同压力情景下的合理估值下沿。
-
-模型由以下三个层级串联组成：
-1. **核心锚（BDK 链上基本面）**：基于算力（Hashrate）与活跃地址数（Active Addresses），锚定 BTC 长期链上价值。
-2. **第一折价层（Biais 均衡收益）**：整合交易便利收益（Transaction Benefit）、交易成本（Transaction Cost）、市场进入渠道（Market Access, ETF）和崩盘风险（Crash Risk）。
-3. **第二折价层（Liu-Tsyvinski 风险收益）**：整合市场动量（Momentum）与投资者注意力（Attention / Negative Attention）。
+1. **Bhambhwani, Delikouras, and Korniotis (2019)** — 链上基本面与网络价值锚定
+2. **Biais et al. (2023)** — 均衡交易便利收益与成本折价层
+3. **Liu and Tsyvinski (2021)** — 动量与注意力风险收益折价层
 
 ---
 
-## 2. 核心框架与处理流程
+## 1. 核心定价算法与框架
 
-项目的数据管道与估值流程严格遵循以下闭环：
+模型采用**“基本面价值锚 + 双重行为折价”**的级联定价结构：
+
+$$\text{Strict Valuation Point} = \text{BDK Fundamental Anchor} \times \text{Biais Discount} \times \text{Liu-Tsyvinski Discount}$$
 
 ```mermaid
 graph TD
-    A[多源数据并行抓取] --> B[数据清洗与特征构建]
-    B --> C[严格交叉验证与自校验]
-    C --> D[动态权重评分与折扣层计算]
-    D --> E[压力情景下沿估值输出]
+    A[加密货币定价三支柱] --> B(BDK 链上基本面锚)
+    A --> C(Biais 均衡交易折价)
+    A --> D(Liu-Tsyvinski 风险注意力折价)
     
-    subgraph 抓取源 (Public APIs)
-        A1[价格: Coinbase/Kraken/Yahoo] --> A
-        A2[链上: Blockchain/CoinMetrics] --> A
-        A3[注意力: Wikipedia Pageviews] --> A
-    end
-
-    subgraph 验证机制 (Validator)
-        C1[共识价格/算力/活跃地址验证] --> C
-        C2[维基百科单源自校验回退] --> C
-    end
+    B --> E[动态下沿估值 Strict Point]
+    C --> E
+    D --> E
+    
+    E --> F[下沿估值区间: Strict Point ± Band Width]
 ```
 
-### 核心设计特点
-* **严格交叉验证 (Validator)**：排除手动或不可靠的单一数据源。只有通过双源一致性校验（相关系数、水平差距、分位数差异）的数据才允许进入定价。
-* **维基百科单源自校验回退 (Wiki Fallback)**：针对高频受限/封禁的 API（如 Google Trends 和 GDELT），在双源校验失效时，自动启用维基百科单源（非恒定常数且满足观测样本数）自校验逻辑，保障模型不退化。
-* **防 NaN 传播动态加权评分**：评分算法采用掩码动态重归一化，当部分可选数据源（如 ETF 净流入或转账量）因 API 缺失时，能自动重新分配权重进行加权平均，防止 NaN 值的级联污染。
+### 1.1 BDK 链上基本面价值锚 (Bhambhwani et al., 2019)
+通过算力（Hashrate）与网络规模（Active Addresses）锚定比特币的底层生产力与网络价值。在设定算力与用户规模回落的压力情景时，基本面锚定价值计算公式为：
+
+$$V_{\text{BDK}} = P_{\text{current}} \times \left(\frac{\text{HR}_{\text{stress}}}{\text{HR}_{\text{current}}}\right)^{\beta_{\text{hashrate}}} \times \left(\frac{\text{AA}_{\text{stress}}}{\text{AA}_{\text{current}}}\right)^{\beta_{\text{network}}}$$
+
+*   其中 $\beta_{\text{hashrate}} = 1.298$ 刻画算力弹性，$\beta_{\text{network}} = 1.802$ 刻画活跃地址网络效应弹性。
 
 ---
 
-## 3. 项目结构与模块划分
+### 1.2 Biais 均衡收益折价层 (Biais et al., 2023)
+评估网络交易的实际效益与均衡风险。对以下四大因子计算滚动 $Z$-Score 并进行动态加权，生成 $S_{\text{Biais}}$ 评分：
 
-项目采用高度模块化的结构，便于扩展与维护：
+$$S_{\text{Biais}} = w_1 \cdot Z_{\text{Benefit}} + w_2 \cdot Z_{\text{Cost}} + w_3 \cdot Z_{\text{Access}} + w_4 \cdot Z_{\text{Crash}}$$
 
-```text
-QuantStrat/
-├── 加密货币定价&基本面/
-│   ├── btc_unified_pricing_model_v1_3.py  # 命令行运行入口
-│   ├── requirements.txt                   # 项目依赖
-│   ├── config.example.json                # 参数配置文件示例
-│   │
-│   ├── btc_unified_pricing_model/         # 核心模型包
-│   │   ├── __init__.py
-│   │   ├── config.py                      # 统一参数配置 (ModelConfig)
-│   │   ├── utils.py                       # 抓取重试、Winsorize、Z-score 等通用工具
-│   │   ├── fetchers.py                    # 异步/并行多源 API 数据抓取器
-│   │   ├── processor.py                   # 字段平滑与时序特征工程
-│   │   ├── validator.py                   # 交叉验证核心逻辑 (自校验与回退机制)
-│   │   ├── pricing.py                     # BDK 估值锚、折价评分计算与压力情景模拟
-│   │   ├── io_outputs.py                  # 多格式报表导出与控制台报告打印
-│   │   └── pipeline.py                    # 调度数据流与估值管道的控制器
-│   │
-│   ├── tests/                             # 单元测试模块
-│   │   └── test_core.py                   # 核心计算与验证逻辑测试
-│   │
-│   └── btc_pricing_output_v1_3/           # 估值报告输出目录 (CSV / JSON)
-└── 波动率&时间序列检验/                      # 其他学术复现模块
-```
+*   **交易收益 ($Z_{\text{Benefit}}$)**：由交易笔数与转账金额的均值表达（权重 $0.40$）。
+*   **交易成本 ($Z_{\text{Cost}}$)**：由链上平均手续费表达（取负数，结合转账量平抑，权重 $0.20$）。
+*   **市场渠道 ($Z_{\text{Access}}$)**：由 ETF 资金流表达（权重 $0.20$）。
+*   **崩盘风险 ($Z_{\text{Crash}}$)**：由滚动实现波动率与最大回撤表达（取负数，权重 $0.20$）。
+
+通过 $S_{\text{Biais}}$ 划分阶梯阈值，动态输出折价系数（如通过阈值映射为 `0.92` 的折价因子）。
 
 ---
 
-## 4. 运行说明
+### 1.3 Liu-Tsyvinski 动量与注意力折价层 (Liu & Tsyvinski, 2021)
+评估市场动量与投资者注意力的非对称溢价。对四大因子进行动态加权，生成 $S_{\text{Liu}}$ 评分：
 
-在 `加密货币定价&基本面` 目录下：
+$$S_{\text{Liu}} = w_1' \cdot Z_{\text{Momentum}} + w_2' \cdot Z_{\text{Attention}} + w_3' \cdot Z_{\text{Neg\_Attention}} + w_4' \cdot Z_{\text{Activity}}$$
 
-### 快速诊断运行 (跳过慢速 API)
-```bash
-python btc_unified_pricing_model_v1_3.py --fast
-```
+*   **市场动量 ($Z_{\text{Momentum}}$)**：由 7D/14D/28D 比特币对数收益率表征（权重 $0.40$）。
+*   **普通注意力 ($Z_{\text{Attention}}$)**：由维基百科页面浏览量（表征大众注意力）的滚动 $Z$-Score 刻画（权重 $0.25$）。
+*   **负面注意力 ($Z_{\text{Neg\_Attention}}$)**：由负面话题访问量占比（表征市场负向情绪）的滚动 $Z$-Score 刻画（取负数，权重 $0.20$）。
+*   **活跃增长 ($Z_{\text{Activity}}$)**：由网络活跃度百分比变化率刻画（权重 $0.15$）。
 
-### 自定义配置运行
-```bash
-python btc_unified_pricing_model_v1_3.py --config config.example.json --days 180
-```
-
-### 运行单元测试
-```bash
-python -m unittest discover tests
-```
+通过 $S_{\text{Liu}}$ 划分阶梯阈值，动态输出折价系数（如通过阈值映射为 `0.95` 的折价因子）。
 
 ---
 
-## 5. 免责声明与边界
+## 2. 定价模型降级与区间宽度算法
 
-Biais 和 Liu-Tsyvinski 模块在此项目中作为基于学术研究背景的**启发式动态折价层**实现，并非原论文计量经济学模型参数的直接校准或预测工具。
+模型引入了基于数据质量与验证状态的**动态定价降级（Model Downgrade）**与**区间宽度调整（Band Width Adjustment）**机制：
+*   **模型状态降级**：
+    *   **Full Model**：所有模块（BDK + Biais + Liu）全部通过验证，采用最窄区间宽度基准 $\text{Band\_Width} = 0.05$。
+    *   **Core / Reduced Model**：仅核心锚与部分扩展模块通过验证，区间宽度基准放宽至 $0.10 \sim 0.15$。
+    *   **BDK Only**：仅基本面锚有效，折价层未通过，使用较宽区间基准 $0.18$。
+*   **样本缺失惩罚**：有效观测天数小于 90 天时，对区间宽度追加 $0.03 \sim 0.05$ 的惩罚项 $\text{Width\_Addon}$，最终估值下沿区间为：
+    
+$$\text{Price Range} = \text{Strict Point} \times (1 \pm \text{Band\_Width})$$
+
+---
+
+## 3. 定价情景设计
+
+模型依据不同链上压力级别，设计了四大估值下沿情景：
+1.  **基础压力 (Base)**：算力与活跃地址回落到最近观测样本的 30% 分位数。
+2.  **核心下沿 (Core)**：算力与活跃地址回落到最近观测样本的 15% 分位数。
+3.  **严重压力 (Severe)**：算力与活跃地址回落到最近观测样本的 5% 分位数。
+4.  **极端尾部 (Extreme)**：在 5% 分位数基础上进一步下压，模拟极度恐慌状态下的极限价格底部。
+
+---
+
+## 4. 项目模块与代码目录
+
+*   `btc_unified_pricing_model/`
+    *   `pricing.py`：**【核心算法所在】**实现基本面锚定公式、Biais 分数计算、Liu-Tsyvinski 分数计算、加权分配以及四类压力情景下的区间输出。
+    *   `validator.py`：负责学术共识交叉验证（过滤未经验证的数据，确保定价入参的数据可信度）。
+    *   `processor.py`：执行特征转换（对数收益、注意力 Ratio 等）。
+    *   `pipeline.py` / `cli.py`：串联整个定价计算工作流。
