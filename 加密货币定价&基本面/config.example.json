@@ -1,0 +1,28 @@
+{
+  "days": 180,
+  "output_dir": "./btc_pricing_output_v1_3",
+  "request_timeout": 30,
+  "max_request_retries": 3,
+  "parallel_fetch": true,
+  "fetch_max_workers": 6,
+  "skip_gdelt": false,
+  "skip_etf": false,
+  "gdelt_read_fresh_cache": true,
+  "gdelt_cache_max_stale_days": 1,
+  "non_retryable_status_codes": [400, 401, 403, 404, 451],
+  "biais_weights": {
+    "transaction_benefit": 0.4,
+    "transaction_cost": 0.2,
+    "market_access": 0.2,
+    "crash_risk": 0.2
+  },
+  "liu_weights": {
+    "momentum": 0.4,
+    "ordinary_attention": 0.25,
+    "negative_attention": 0.2,
+    "activity_growth": 0.15
+  },
+  "biais_discount_thresholds": [[0.5, 1.0], [-0.5, 0.92], [-1.0, 0.85], [-1e99, 0.75]],
+  "liu_discount_thresholds": [[0.5, 1.0], [-0.5, 0.95], [-1.0, 0.9], [-1e99, 0.82]],
+  "sensitivity_score_shocks": [-0.5, 0.0, 0.5]
+}
