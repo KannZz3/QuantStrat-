@@ -1,6 +1,6 @@
 # 比特币多维动态定价与级联估值框架 (QuantStrat)
 
-本项目提供了一个基于学术理论的**比特币（BTC）统一多维动态下沿估值模型**。模型融合了链上核心基本面锚定与市场行为折价机制，旨在极端行情或高波动市场下，为比特币计算出具有坚实基本面支撑、且经过市场情绪与交易摩擦调整的**价格下沿支撑区间**。
+本项目提供了一个基于学术理论的**比特币（BTC）统一多维动态下沿估值模型**。模型融合了链上核心基本面锚定与市场行为折价机制，旨在极端行情或高波动市场下，为比特币计算出具有坚实基本面支撑、且经过市场情绪与交易摩擦调整的价格下沿支撑区间。
 
 模型基于三篇顶级金融学与经济学学术论文构建核心定价算法：
 1. **Bhambhwani et al. (2019, BDK)** — 链上基本面与网络价值锚定
@@ -13,9 +13,13 @@
 
 模型采用**“基本面价值锚 + 双重行为折价”**的级联结构：
 
-$$\text{Strict Lower Point } (P_{\text{strict}}) = V_{\text{BDK}} \times D_{\text{Biais}} \times D_{\text{Liu}}$$
+$$
+P_{strict} = V_{BDK} \times D_{Biais} \times D_{Liu}
+$$
 
-$$\text{Valuation Range} = P_{\text{strict}} \times (1 \pm W)$$
+$$
+\text{Valuation Range} = P_{strict} \times (1 \pm W)
+$$
 
 ### 1.1 系统工作流与数据级联
 ```mermaid
@@ -67,13 +71,21 @@ graph TD
 ## 2. 核心定价算法与学术源起
 
 ### 2.1 BDK 链上基本面价值锚 (V_BDK)
-基于 BDK (2019) 论文，利用**算力 (HR)** 与**活跃地址 (AA)** 锚定比特币的生产力与网络效应。
+基于 BDK (2019) 论文，利用算力 (HR) 与活跃地址 (AA) 锚定比特币的生产力与网络效应。
 
 1. **长期 Log-Log 公允估值模型**：
-   $$\log(P) = \alpha + \beta_{\text{hr}}\log(\text{HR}) + \beta_{\text{net}}\log(\text{AA}) + \epsilon$$
-   * **动态样本内重校准**：模型支持在当前验证样本内自动进行 OLS 二元回归。若估计的弹性系数均为正值，则动态采用最新样本内弹性；否则回退至经典历史弹性（$\beta_{\text{hr}} = 1.298$, $\beta_{\text{net}} = 1.802$）。
+
+$$
+\log(P) = \alpha + \beta_{hr}\log(HR) + \beta_{net}\log(AA) + \epsilon
+$$
+
+* **动态样本内重校准**：模型支持在当前验证样本内自动进行 OLS 二元回归。若估计的弹性系数均为正值，则动态采用最新样本内弹性；否则回退至经典历史弹性（算力弹性 1.298，活跃地址弹性 1.802）。
+
 2. **压力情景锚定公式**：
-   $$V_{\text{BDK}} = P_{\text{current}} \times \left(\frac{\text{HR}_{\text{stress}}}{\text{HR}_{\text{current}}}\right)^{\beta_{\text{hr}}} \times \left(\frac{\text{AA}_{\text{stress}}}{\text{AA}_{\text{current}}}\right)^{\beta_{\text{net}}}$$
+
+$$
+V_{BDK} = P_{current} \times \left(\frac{HR_{stress}}{HR_{current}}\right)^{\beta_{hr}} \times \left(\frac{AA_{stress}}{AA_{current}}\right)^{\beta_{net}}
+$$
 
 > [!IMPORTANT]
 > 为避免重复计算，Biais 与 Liu 折价层中**禁用了 Active Addresses**，仅在 BDK 层计算网络效应。
@@ -81,26 +93,30 @@ graph TD
 ---
 
 ### 2.2 Biais 均衡交易折价算法 (D_Biais)
-评估网络交易的实际便利收益与系统摩擦。计算四大因子的滚动 $Z$-Score 并进行动态加权，生成 $S_{\text{Biais}}$ 综合评分：
+评估网络交易的实际便利收益与系统摩擦。计算四大因子的滚动 Z-Score 并进行动态加权，生成 $S_{Biais}$ 综合评分：
 
-$$S_{\text{Biais}} = w_1 Z_{\text{Benefit}} + w_2 Z_{\text{Cost}} + w_3 Z_{\text{Access}} + w_4 Z_{\text{Crash}}$$
+$$
+S_{Biais} = w_1 Z_{Benefit} + w_2 Z_{Cost} + w_3 Z_{Access} + w_4 Z_{Crash}
+$$
 
 * **指标与权重设定**：
   * **交易收益 (Benefit, 40%)**：交易笔数与转账金额均值，反映网络流转能力。
   * **交易成本 (Cost, 20%)**：链上平均手续费（取负值），结合转账量大小复合计算，代表网络摩擦阻力。
   * **市场渠道 (Access, 20%)**：现货 ETF 资金净流入量，体现合规资本流动性输入。
-  * **崩盘风险 (Crash, 20%)**：波动率与最大回撤的加权负 $Z$-Score。整体引入 `clip(upper=0.0)` 处理，使其仅作为下行惩罚项，过滤牛市高位伪正向评分。
+  * **崩盘风险 (Crash, 20%)**：波动率与最大回撤的加权负 Z-Score。整体引入 `clip(upper=0.0)` 处理，使其仅作为下行惩罚项，过滤牛市高位伪正向评分。
 
 ---
 
 ### 2.3 Liu-Tsyvinski 动量与注意力折价算法 (D_Liu)
-刻画市场短期趋势惯性与投资者注意力的非对称溢价。生成 $S_{\text{Liu}}$ 评分：
+刻画市场短期趋势惯性与投资者注意力的非对称溢价。生成 $S_{Liu}$ 评分：
 
-$$S_{\text{Liu}} = w_1' Z_{\text{Momentum}} + w_2' Z_{\text{Attention}} + w_3' Z_{\text{NegAttention}} + w_4' Z_{\text{Activity}}$$
+$$
+S_{Liu} = w_1' Z_{Momentum} + w_2' Z_{Attention} + w_3' Z_{NegAttention} + w_4' Z_{Activity}
+$$
 
 * **指标与权重设定**：
   * **市场动量 (Momentum, 40%)**：7D / 14D / 28D 比特币对数收益率的均值。
-  * **普通注意力 (Attention, 25%)**：维基百科页面浏览量滚动 $Z$-Score。若注意力指标未通过双源严格验证，将被归入 `Research-tier` 并对权重乘以折减因子 `research_tier_weight_factor = 0.60`。
+  * **普通注意力 (Attention, 25%)**：维基百科页面浏览量滚动 Z-Score。若注意力指标未通过双源严格验证，将被归入 `Research-tier` 并对权重乘以折减因子 `research_tier_weight_factor = 0.60`。
   * **负面注意力 (NegAttention, 20%)**：负面词条（如 bubble/scalability）浏览占比（取负值）。作为 `Research-tier` 时权重同样按 0.60 折减。
   * **活跃增长 (Activity, 15%)**：交易笔数 7D 变化率。
 
@@ -109,7 +125,11 @@ $$S_{\text{Liu}} = w_1' Z_{\text{Momentum}} + w_2' Z_{\text{Attention}} + w_3' Z
 ### 2.4 折价函数与平滑映射
 支持两种折价映射方式（可在配置中指定 `discount_method`）：
 * **连续指数折价 (`exponential_downside`，默认)**：
-  $$\text{Discount} = \max\left(\text{Floor}, \exp\left(\lambda \cdot \min(S, 0)\right)\right)$$
+
+$$
+D = \max\left(\text{Floor}, \exp\left(\lambda \cdot \min(S, 0)\right)\right)
+$$
+
   仅在得分为负时触发连续平滑的下行折价，避免临界点跳跃。
 * **阶梯阈值折价 (`threshold`)**：根据得分区间离散映射为固定折扣分档。
 
@@ -117,7 +137,7 @@ $$S_{\text{Liu}} = w_1' Z_{\text{Momentum}} + w_2' Z_{\text{Attention}} + w_3' Z
 
 ## 3. 自适应状态评估与宽度调整机制
 
-1. **学术语义状态 (Model Status)** 与基准区间宽度 ($W$):
+1. **学术语义状态 (Model Status) 与基准区间宽度 (W)**:
    * `Full Model`：三大模块均通过严格多源验证（$W = 0.05$）。
    * `BDK + Biais Core + Liu Attention Enhanced`：注意力增强的混合模型（$W = 0.10$）。
    * `BDK + Biais Core + Liu Momentum` / `BDK + Liu Full`：包含部分折价或经典动量（$W = 0.10 \sim 0.12$）。
@@ -130,7 +150,7 @@ $$S_{\text{Liu}} = w_1' Z_{\text{Momentum}} + w_2' Z_{\text{Attention}} + w_3' Z
    * 当 60 天 $\le$ `min_core_validated_obs` < 90 天时：区间宽度追加 $+0.03$。
 
 3. **区间波动率下限限制**：
-   为避免估值区间过窄而脱离现实，设定硬性下限 `band_width_floor = 0.12`。最终的区间宽度限制在 $[0.12, 0.30]$ 之间。
+   为避免估值区间过窄而脱离现实，设定硬性下限 `band_width_floor = 0.12`。最终的区间宽度限制在 0.12 至 0.30 之间。
 
 ---
 
