@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import math
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -970,8 +970,10 @@ class CrossValidator:
         market_access_pass = bool(etf_res["pass"])
         crash_risk_pass = bool(price_res["pass"])
         biais_pass_count = sum([transaction_benefit_pass, transaction_cost_pass, market_access_pass, crash_risk_pass])
-        # Biais 的核心是交易便利收益。没有 transaction benefit，不允许 Biais 进入 strict 模型。
-        biais_module_pass = bool(transaction_benefit_pass and (transaction_cost_pass or market_access_pass or crash_risk_pass))
+        # Biais 核心是交易便利收益。
+        # 修复：将安全验证简化为：必须有 transaction_benefit ＋崩盘风险可计算（即价格序列通过）。
+        # crash_risk_pass = price_res["pass"]，确保崩盘风险基础数据（实现波动率与回撤）可用。
+        biais_module_pass = bool(transaction_benefit_pass and crash_risk_pass)
         biais_full_pass = bool(transaction_benefit_pass and transaction_cost_pass and crash_risk_pass)
 
         ordinary_attention_pass = bool(att_res["pass"])

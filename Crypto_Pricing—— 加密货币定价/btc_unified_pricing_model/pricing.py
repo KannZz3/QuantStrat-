@@ -16,52 +16,101 @@ class UnifiedBTCPricingModelV12:
     def __init__(self, cfg: ModelConfig):
         self.cfg = cfg
 
-    def bdk_anchor(self, p_current: float, hr_current: float, aa_current: float, hr_stress: float, aa_stress: float) -> float:
-        """Bhambhwani/BDK 链上基本面压力锚。"""
+    def bdk_anchor(self, p_current: float, hr_current: float, aa_current: float,
+                   hr_stress: float, aa_stress: float,
+                   beta_hr: Optional[float] = None, beta_aa: Optional[float] = None) -> float:
+        """Bhambhwani/BDK 链上基本面压力锤。支持可选的样本内 OLS 重校准弹性参数。"""
         if any(pd.isna(x) or x <= 0 for x in [p_current, hr_current, aa_current, hr_stress, aa_stress]):
             return np.nan
+        bh = float(beta_hr) if (beta_hr is not None and pd.notna(beta_hr)) else self.cfg.beta_hashrate
+        ba = float(beta_aa) if (beta_aa is not None and pd.notna(beta_aa)) else self.cfg.beta_network
         return float(
             p_current
-            * (hr_stress / hr_current) ** self.cfg.beta_hashrate
-            * (aa_stress / aa_current) ** self.cfg.beta_network
+            * (hr_stress / hr_current) ** bh
+            * (aa_stress / aa_current) ** ba
         )
 
     def bdk_loglog_fit(self, df: pd.DataFrame, latest_idx: int) -> Dict[str, float]:
         """
-        BDK log-log fair value proxy.
+        BDK log-log 公允价値，支持样本内 OLS 全参数估计。
 
-        使用论文弹性 beta_hashrate / beta_network，并在当前验证样本中估计 alpha：
-            log(P) = alpha + beta_hr log(HR) + beta_net log(AA) + error
-
-        这样保留当前 stress anchor，同时给出不直接按当前价格缩放的基本面拟合价值。
+        当 beta_recalibrate_in_sample=True 且样本量足够时，在当前验证样本内同时用 OLS 估计
+        alpha, beta_hashrate, beta_network（两者均为正时才采用 OLS 弹性，否则回退纸本定制弹性）。
+        alpha 一律用 OLS 方法（均値残差）而非中位数，与论文方法论一致。
         """
         cols = ["validated_btc_price", "validated_hashrate_7d", "validated_active_addresses_7d"]
         work = df.loc[:latest_idx, cols].replace([np.inf, -np.inf], np.nan).dropna().copy()
         work = work[(work[cols] > 0).all(axis=1)]
         min_obs = max(30, int(getattr(self.cfg, "research_min_observations", 30)))
         if len(work) < min_obs:
-            return {"alpha": np.nan, "fair_value_current": np.nan, "fit_obs": int(len(work))}
-        residual = (
-            np.log(work["validated_btc_price"])
-            - self.cfg.beta_hashrate * np.log(work["validated_hashrate_7d"])
-            - self.cfg.beta_network * np.log(work["validated_active_addresses_7d"])
-        )
-        alpha = float(residual.median())
+            return {
+                "alpha": np.nan, "fair_value_current": np.nan, "fit_obs": int(len(work)),
+                "beta_hashrate_insample": np.nan, "beta_network_insample": np.nan,
+                "beta_hashrate_used": self.cfg.beta_hashrate,
+                "beta_network_used": self.cfg.beta_network,
+                "calibration_method": "insufficient_data",
+            }
+
+        log_p  = np.log(work["validated_btc_price"].values)
+        log_hr = np.log(work["validated_hashrate_7d"].values)
+        log_aa = np.log(work["validated_active_addresses_7d"].values)
+
+        # 样本内 OLS 全参数估计
+        recalibrate = bool(getattr(self.cfg, "beta_recalibrate_in_sample", True))
+        beta_hr_use: float = self.cfg.beta_hashrate
+        beta_aa_use: float = self.cfg.beta_network
+        beta_hr_insample: float = float(np.nan)
+        beta_aa_insample: float = float(np.nan)
+        calibration_method = "paper_betas_ols_alpha"
+
+        if recalibrate and len(work) >= 60:
+            try:
+                X = np.column_stack([np.ones(len(work)), log_hr, log_aa])
+                coeffs, _, _, _ = np.linalg.lstsq(X, log_p, rcond=None)
+                bhr_ols, baa_ols = float(coeffs[1]), float(coeffs[2])
+                # 只有两个弹性均为正时才采用 OLS 弹性，否则回退纸本定制弹性。
+                if bhr_ols > 0.1 and baa_ols > 0.1:
+                    beta_hr_insample = bhr_ols
+                    beta_aa_insample = baa_ols
+                    beta_hr_use = bhr_ols
+                    beta_aa_use = baa_ols
+                    calibration_method = "full_ols_insample"
+                else:
+                    calibration_method = "paper_betas_ols_alpha_sign_fallback"
+            except Exception:
+                calibration_method = "paper_betas_ols_alpha_error_fallback"
+
+        # alpha 用 OLS 方法（均値残差），与纸本方法论一致。
+        residual = log_p - beta_hr_use * log_hr - beta_aa_use * log_aa
+        alpha = float(np.mean(residual))
+
         latest = df.loc[latest_idx]
         fair_value = float(np.exp(
             alpha
-            + self.cfg.beta_hashrate * np.log(float(latest["validated_hashrate_7d"]))
-            + self.cfg.beta_network * np.log(float(latest["validated_active_addresses_7d"]))
+            + beta_hr_use * np.log(float(latest["validated_hashrate_7d"]))
+            + beta_aa_use * np.log(float(latest["validated_active_addresses_7d"]))
         ))
-        return {"alpha": alpha, "fair_value_current": fair_value, "fit_obs": int(len(work))}
+        return {
+            "alpha": alpha,
+            "fair_value_current": fair_value,
+            "fit_obs": int(len(work)),
+            "beta_hashrate_insample": beta_hr_insample,
+            "beta_network_insample": beta_aa_insample,
+            "beta_hashrate_used": beta_hr_use,
+            "beta_network_used": beta_aa_use,
+            "calibration_method": calibration_method,
+        }
 
-    def bdk_loglog_value(self, alpha: float, hr_value: float, aa_value: float) -> float:
+    def bdk_loglog_value(self, alpha: float, hr_value: float, aa_value: float,
+                          beta_hr: Optional[float] = None, beta_aa: Optional[float] = None) -> float:
         if pd.isna(alpha) or any(pd.isna(x) or x <= 0 for x in [hr_value, aa_value]):
             return np.nan
+        bh = float(beta_hr) if (beta_hr is not None and pd.notna(beta_hr)) else self.cfg.beta_hashrate
+        ba = float(beta_aa) if (beta_aa is not None and pd.notna(beta_aa)) else self.cfg.beta_network
         return float(np.exp(
             alpha
-            + self.cfg.beta_hashrate * np.log(float(hr_value))
-            + self.cfg.beta_network * np.log(float(aa_value))
+            + bh * np.log(float(hr_value))
+            + ba * np.log(float(aa_value))
         ))
 
     def compute_biais_score(self, df: pd.DataFrame, validation_report: dict) -> pd.Series:
@@ -97,23 +146,29 @@ class UnifiedBTCPricingModelV12:
             scores.append(access)
             weights.append(float(self.cfg.biais_weights.get("market_access", 0.20)))
 
-        # Crash risk：价格通过即可计算 realized vol + drawdown。
+        # Crash risk ：只允许负向信号（高风险=负分），不将历史低回撤误读为利好。
+        # 修复： ATH 时 drawdown≈0， z_drawdown 极低， -z_drawdown 为正，会对 Biais score 产生虚假正向信号。
+        # 修复方案：crash_risk 组分整体 clip 上限为 0，使其仅作惩罚项而非奖励项。
         if components["crash_risk_pass"]:
-            crash = -mean_existing(df, ["z_validated_realized_vol_30d", "z_validated_drawdown_90d"])
+            crash_raw = -mean_existing(df, ["z_validated_realized_vol_30d", "z_validated_drawdown_90d"])
+            crash = crash_raw.clip(upper=0.0)
             scores.append(crash)
             weights.append(float(self.cfg.biais_weights.get("crash_risk", 0.20)))
 
         if not scores:
             return pd.Series(np.nan, index=df.index)
 
-        weighted_sum = pd.Series(0.0, index=df.index)
-        weight_sum_series = pd.Series(0.0, index=df.index)
+        # 修复：避免使用 .loc 链式赋値；改用 numpy 向量化累加。
+        weighted_arr = np.zeros(len(df), dtype=float)
+        weight_arr = np.zeros(len(df), dtype=float)
         for s, w in zip(scores, weights):
-            mask = s.notna()
-            weighted_sum.loc[mask] += s.loc[mask] * w
-            weight_sum_series.loc[mask] += w
-        
-        return weighted_sum / weight_sum_series.replace(0, np.nan)
+            valid_mask = s.notna().values
+            vals = s.fillna(0.0).values
+            weighted_arr[valid_mask] += vals[valid_mask] * w
+            weight_arr[valid_mask] += w
+        with np.errstate(invalid="ignore", divide="ignore"):
+            result = np.where(weight_arr > 0, weighted_arr / weight_arr, np.nan)
+        return pd.Series(result, index=df.index)
 
     def _threshold_discount_from_score(self, score: Optional[float], module_pass: bool, thresholds) -> Optional[float]:
         if not module_pass or score is None or pd.isna(score):
@@ -150,6 +205,8 @@ class UnifiedBTCPricingModelV12:
         Liu-Tsyvinski 启发式收益状态折价层。
         注意：不是原论文预测回归系数的直接复刻。
         active addresses 不在此使用；activity growth 用 transaction_count 或 transfer_volume 的 validated proxy。
+        修复：research-tier（单源 Wikipedia）注意力权重按 research_tier_weight_factor 打折，
+        以区分其与严格双源验证注意力的置信度差异。
         """
         components = validation_report["module_pass"]["liu_components"]
         scores = []
@@ -164,15 +221,23 @@ class UnifiedBTCPricingModelV12:
             attention = df.get("strict_validated_attention_z", pd.Series(np.nan, index=df.index)).combine_first(
                 df.get("research_validated_attention_z", pd.Series(np.nan, index=df.index))
             )
+            att_weight = float(self.cfg.liu_weights.get("ordinary_attention", 0.25))
+            # research-tier（单源 Wikipedia）权重打折，置信度低于双源严格验证。
+            if components.get("ordinary_attention_tier") == "research":
+                att_weight *= float(getattr(self.cfg, "research_tier_weight_factor", 0.60))
             scores.append(attention)
-            weights.append(float(self.cfg.liu_weights.get("ordinary_attention", 0.25)))
+            weights.append(att_weight)
 
         if components["negative_attention_pass"]:
             negative_attention = df.get("strict_validated_negative_attention_z", pd.Series(np.nan, index=df.index)).combine_first(
                 df.get("research_validated_negative_attention_z", pd.Series(np.nan, index=df.index))
             )
+            neg_weight = float(self.cfg.liu_weights.get("negative_attention", 0.20))
+            # research-tier 权重同样打折。
+            if components.get("negative_attention_tier") == "research":
+                neg_weight *= float(getattr(self.cfg, "research_tier_weight_factor", 0.60))
             scores.append(-negative_attention)
-            weights.append(float(self.cfg.liu_weights.get("negative_attention", 0.20)))
+            weights.append(neg_weight)
 
         if components["activity_growth_pass"]:
             scores.append(df["z_validated_activity_growth"])
@@ -181,14 +246,17 @@ class UnifiedBTCPricingModelV12:
         if not scores:
             return pd.Series(np.nan, index=df.index)
 
-        weighted_sum = pd.Series(0.0, index=df.index)
-        weight_sum_series = pd.Series(0.0, index=df.index)
+        # 修复：避免使用 .loc 链式赋值；改用 numpy 向量化累加。
+        weighted_arr = np.zeros(len(df), dtype=float)
+        weight_arr = np.zeros(len(df), dtype=float)
         for s, w in zip(scores, weights):
-            mask = s.notna()
-            weighted_sum.loc[mask] += s.loc[mask] * w
-            weight_sum_series.loc[mask] += w
-        
-        return weighted_sum / weight_sum_series.replace(0, np.nan)
+            valid_mask = s.notna().values
+            vals = s.fillna(0.0).values
+            weighted_arr[valid_mask] += vals[valid_mask] * w
+            weight_arr[valid_mask] += w
+        with np.errstate(invalid="ignore", divide="ignore"):
+            result = np.where(weight_arr > 0, weighted_arr / weight_arr, np.nan)
+        return pd.Series(result, index=df.index)
 
     def liu_discount_from_score(self, score: Optional[float], module_pass: bool) -> Optional[float]:
         """Liu score 转折价；模块未通过则返回 None，不参与模型。"""
@@ -210,6 +278,7 @@ class UnifiedBTCPricingModelV12:
             "BDK + Biais Core + Liu Attention Enhanced",
             "BDK + Biais Core + Liu Momentum",
             "BDK + Biais Core",
+            "BDK + Liu Full",
             "BDK + Liu Momentum",
             "BDK + Liu Attention Enhanced",
         ] and quality >= 0.70 and min_core_obs >= 60:
@@ -243,6 +312,9 @@ class UnifiedBTCPricingModelV12:
             return "BDK + Biais Core + Liu Momentum", 0.12
         if has_biais:
             return "BDK + Biais Core", 0.15
+        # 修复：补全不含 Biais 但 Liu 全通的语义状态。
+        if has_liu and module.get("liu_full_pass"):
+            return "BDK + Liu Full", 0.10
         if has_liu and liu_attention:
             return "BDK + Liu Attention Enhanced", 0.15
         if has_liu:
@@ -548,7 +620,9 @@ class UnifiedBTCPricingModelV12:
         elif min_core_validated_obs < 90:
             sample_width_addon = 0.03
         band_width_base = band_width
-        band_width = min(band_width + sample_width_addon, 0.30)
+        # 修复：添加区间宽度下限，BTC 月度波动率 20-40%，区间不应窄于 band_width_floor。
+        band_width_floor = float(getattr(self.cfg, "band_width_floor", 0.12))
+        band_width = min(max(band_width + sample_width_addon, band_width_floor), 0.30)
 
         # ----------------------------------------------------
         # 5.2 压力情景：只用 validated hashrate / active addresses，且 stress 不得高于当前值。
@@ -582,16 +656,26 @@ class UnifiedBTCPricingModelV12:
                 "aa_stress": downside_stress(aa_series, 0.05, aa_current, 0.90),
             },
             "extreme_tail": {
-                "desc_cn": "极端尾部：validated 5% 分位基础上进一步下压，且不高于当前值的 85%",
-                "hr_stress": min(safe_quantile(hr_series, 0.05, hr_current * 0.85) * 0.90, hr_current * 0.85),
-                "aa_stress": min(safe_quantile(aa_series, 0.05, aa_current * 0.85) * 0.90, aa_current * 0.85),
+                "desc_cn": "极端尾部：validated hashrate 与 active addresses 回落到最近验证样本 5% 分位，且不高于当前值的 85%",
+                # 修复：去除双重下压（之前对 5% 分位数再乘 0.90），直接使用历史 5% 分位数加 85% 上限。
+                "hr_stress": downside_stress(hr_series, 0.05, hr_current, 0.85),
+                "aa_stress": downside_stress(aa_series, 0.05, aa_current, 0.85),
             },
         }
 
+        # 从 bdk_loglog_fit 提取 OLS 校准后的弹性参数。
+        beta_hr_fit = bdk_loglog.get("beta_hashrate_used")
+        beta_aa_fit = bdk_loglog.get("beta_network_used")
+        bdk_loglog_fair_value_current = bdk_loglog.get("fair_value_current", np.nan)
+
         scenario_rows = []
         for name, s in scenarios.items():
-            bdk = self.bdk_anchor(p_current, hr_current, aa_current, s["hr_stress"], s["aa_stress"])
-            bdk_loglog_stress = self.bdk_loglog_value(bdk_loglog.get("alpha"), s["hr_stress"], s["aa_stress"])
+            bdk = self.bdk_anchor(p_current, hr_current, aa_current, s["hr_stress"], s["aa_stress"],
+                                   beta_hr=beta_hr_fit, beta_aa=beta_aa_fit)
+            bdk_loglog_stress = self.bdk_loglog_value(
+                bdk_loglog.get("alpha"), s["hr_stress"], s["aa_stress"],
+                beta_hr=beta_hr_fit, beta_aa=beta_aa_fit,
+            )
             strict_point = bdk * combined_discount if not pd.isna(bdk) else np.nan
             lower = strict_point * (1 - band_width) if not pd.isna(strict_point) else np.nan
             upper = strict_point * (1 + band_width) if not pd.isna(strict_point) else np.nan
@@ -602,10 +686,17 @@ class UnifiedBTCPricingModelV12:
                 "active_addresses_stress": s["aa_stress"],
                 "bdk_loglog_alpha": bdk_loglog.get("alpha"),
                 "bdk_loglog_fit_obs": bdk_loglog.get("fit_obs"),
-                "bdk_loglog_fair_value_current": bdk_loglog.get("fair_value_current"),
+                "bdk_loglog_calibration_method": bdk_loglog.get("calibration_method"),
+                "bdk_loglog_beta_hashrate_used": beta_hr_fit,
+                "bdk_loglog_beta_network_used": beta_aa_fit,
+                "bdk_loglog_beta_hashrate_insample": bdk_loglog.get("beta_hashrate_insample"),
+                "bdk_loglog_beta_network_insample": bdk_loglog.get("beta_network_insample"),
+                # 修复：bdk_anchor_price 改为 loglog 模型在当前基本面的公允价值（无压力）。
+                # bdk_stress_anchor_price 是压力场景下的 BDK 锚定价格（与情景相关）。
+                "bdk_loglog_fair_value_current": bdk_loglog_fair_value_current,
                 "bdk_loglog_fair_value_stress": bdk_loglog_stress,
                 "bdk_stress_anchor_price": bdk,
-                "bdk_anchor_price": bdk,
+                "bdk_anchor_price": bdk_loglog_fair_value_current,
                 "biais_score": float(latest_biais_score) if pd.notna(latest_biais_score) else np.nan,
                 "biais_discount": biais_discount,
                 "liu_score": float(latest_liu_score) if pd.notna(latest_liu_score) else np.nan,
@@ -626,7 +717,8 @@ class UnifiedBTCPricingModelV12:
             })
         scenario_df = pd.DataFrame(scenario_rows)
         core_rows = scenario_df[scenario_df["scenario"] == "core_lower_bound"]
-        core_bdk_anchor = float(core_rows.iloc[0]["bdk_anchor_price"]) if not core_rows.empty else np.nan
+        core_bdk_anchor = float(core_rows.iloc[0]["bdk_stress_anchor_price"]) if not core_rows.empty else np.nan
+
         sensitivity_rows = self._discount_sensitivity_rows(
             core_bdk_anchor,
             latest_biais_score if pd.notna(latest_biais_score) else None,

@@ -14,9 +14,11 @@ class ModelConfig:
     # 审计缓存只写不读，避免旧缓存影响 strict validation。
     cache_dir: str = "./btc_model_cache"
 
-    # Bhambhwani et al. 中 BTC 的长期 log-log 弹性；用于复刻与压力测试。
+    # Bhambhwani et al. 中 BTC 的长期 log-log 弹性（2013-2018 年样本估计，备用）。
     beta_hashrate: float = 1.298
     beta_network: float = 1.802
+    # 是否在当前验证样本内用 OLS 重新估计 beta（两者均为正时才采用 OLS 值，否则回退纸本值）。
+    beta_recalibrate_in_sample: bool = True
 
     # 平滑窗口
     smooth_window: int = 7
@@ -89,6 +91,10 @@ class ModelConfig:
     research_min_observations: int = 30
     allow_liu_momentum_only: bool = True
     discount_method: str = "exponential_downside"
+    # research-tier（单源代理）注意力进入 Liu 层时的权重折减因子（相对于严格双源验证）。
+    research_tier_weight_factor: float = 0.60
+    # 严格模型置信区间下限；BTC 月度波动率通常 20-40%，最窄区间不应窄于此。
+    band_width_floor: float = 0.12
     biais_discount_lambda: float = 0.17
     liu_discount_lambda: float = 0.10
     biais_discount_floor: float = 0.75
