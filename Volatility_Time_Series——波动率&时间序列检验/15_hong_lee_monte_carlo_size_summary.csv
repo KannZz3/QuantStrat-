@@ -1,0 +1,4 @@
+﻿symbol,family,spec_name,requested_reps,ok_reps,rejection_rate_5pct,mean_pvalue,mc_size_target,mc_size_abs_error,status
+AL,GARCH,03_GARCH11_t,100.0,100.0,0.01,0.47942886635933407,0.05,0.04,ok
+AG,EGARCH,08_EGARCH11_t,100.0,100.0,0.0,0.5300615050718149,0.05,0.05,ok
+,GJR,11_GJR11_t,,,,,,,no_usable_fit
