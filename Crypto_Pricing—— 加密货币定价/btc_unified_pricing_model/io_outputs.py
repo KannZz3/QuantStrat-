@@ -29,6 +29,7 @@ def save_outputs(master: pd.DataFrame, summary: dict, output_dir: str) -> None:
     source_coverage_path = os.path.join(output_dir, "btc_source_coverage_v1_3.csv")
     downgrade_table_path = os.path.join(output_dir, "btc_downgrade_table_v1_3.csv")
     sensitivity_path = os.path.join(output_dir, "btc_discount_sensitivity_v1_3.csv")
+    framework_path = os.path.join(output_dir, "btc_three_paper_framework_pricing_v1_3.csv")
 
     master.to_csv(master_path, index=False)
     with open(summary_path, "w", encoding="utf-8") as f:
@@ -41,6 +42,7 @@ def save_outputs(master: pd.DataFrame, summary: dict, output_dir: str) -> None:
     pd.DataFrame(summary.get("validation_report", {}).get("data_source_health", {}).get("records", [])).to_csv(source_coverage_path, index=False)
     pd.DataFrame(summary.get("downgrade_table", [])).to_csv(downgrade_table_path, index=False)
     pd.DataFrame(summary.get("discount_sensitivity_core_lower_bound", [])).to_csv(sensitivity_path, index=False)
+    pd.DataFrame(summary.get("three_paper_framework_rows", summary.get("scenarios", []))).to_csv(framework_path, index=False)
 
     print(f"[OK] master table saved: {master_path}")
     print(f"[OK] summary json saved: {summary_path}")
@@ -49,6 +51,7 @@ def save_outputs(master: pd.DataFrame, summary: dict, output_dir: str) -> None:
     print(f"[OK] source coverage saved: {source_coverage_path}")
     print(f"[OK] downgrade table saved: {downgrade_table_path}")
     print(f"[OK] discount sensitivity saved: {sensitivity_path}")
+    print(f"[OK] three-paper framework pricing saved: {framework_path}")
     print(f"[OK] latest scenario table saved: {latest_path}")
 
 def print_summary(summary: dict) -> None:
@@ -83,6 +86,8 @@ def print_summary(summary: dict) -> None:
     print(f"Validated Active Addresses 7D: {summary.get('active_addresses_current_7d_validated'):,.0f}")
     print(f"Biais 折价: {summary.get('biais_discount_latest')}")
     print(f"Liu-Tsyvinski 折价: {summary.get('liu_discount_latest')}")
+    module_pass = summary.get("validation_report", {}).get("module_pass", {})
+    print(f"Liu 模式: attention_enhanced={module_pass.get('liu_attention_enhanced')} | momentum_only={module_pass.get('liu_momentum_only')}")
     print(f"综合折价: {summary.get('combined_discount_latest')}")
     print(f"validated data quality: {summary.get('validated_data_quality_score')}")
     print(f"core staleness days: {summary.get('latest_validated_core_staleness_days')}")

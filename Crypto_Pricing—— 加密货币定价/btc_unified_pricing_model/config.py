@@ -85,6 +85,9 @@ class ModelConfig:
     price_min_sources: int = 2
 
     # Biais / Liu 启发式折价层参数；输出会同步给出敏感性分析。
+    enable_research_fallbacks: bool = True
+    research_min_observations: int = 30
+    allow_liu_momentum_only: bool = True
     biais_weights: Dict[str, float] = field(default_factory=lambda: {
         "transaction_benefit": 0.40,
         "transaction_cost": 0.20,

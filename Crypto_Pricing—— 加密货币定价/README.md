@@ -88,6 +88,15 @@ $$S_{\text{Liu}} = w_1' \cdot Z_{\text{Momentum}} + w_2' \cdot Z_{\text{Attentio
     
 $$\text{Price Range} = \text{Strict Point} \times (1 \pm \text{Band Width})$$
 
+### 2.1 Strict / Research 双层入模优化
+
+为避免 Biais 与 Liu-Tsyvinski 行为折价层因代理变量天然口径差异而被系统性剔除，模型保留 BDK 核心变量的严格交叉验证，同时允许行为层使用带 `validation_tier` 标记的研究级代理入模：
+
+* **BDK 核心锚**：价格、算力、活跃地址仍必须通过严格多源验证。
+* **Biais Core**：交易便利收益与崩盘风险为核心，ETF flow 作为市场准入扩展项，缺失时不阻断 Biais 核心折价层。
+* **Liu-Tsyvinski**：支持 `momentum-only` 低置信折价；若普通注意力或负面注意力通过 strict/research 代理验证，则升级为 `attention-enhanced`。
+* **输出检验**：新增 `btc_three_paper_framework_pricing_v1_3.csv`，用于直接检查 BDK anchor、Biais/Liu score、折价系数、入模模块与估值区间。
+
 ---
 
 ## 3. 定价情景设计

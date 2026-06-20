@@ -581,26 +581,32 @@ class CrossValidator:
             })
             if res.get("pass"):
                 res["reason"] = f"ordinary attention strict validation pass by {mode}"
+                res["strict_pass"] = True
+                res["validation_tier"] = "strict"
                 att_result = res
                 att_series = ser
                 break
         if att_result is None:
-            # 回退到维基百科单源自校验
+            # 研究级回退：Wiki attention 是开放、稳定的注意力代理。
+            # 它不能伪装成双源 strict validation，但可作为 Liu attention 的低置信研究代理。
             wiki_col = "z_wiki_attention_7d"
-            if wiki_col in df.columns:
+            research_min_obs = max(10, int(getattr(self.cfg, "research_min_observations", 30)))
+            if getattr(self.cfg, "enable_research_fallbacks", True) and wiki_col in df.columns:
                 valid_obs = df[wiki_col].notna().sum()
                 window = min(int(self.cfg.attention_validation_window), len(df))
                 recent_df = df[wiki_col].tail(window)
                 std_val = recent_df.std(skipna=True)
-                if valid_obs >= self.cfg.attention_validation_min_overlap and std_val > 1e-8:
+                if valid_obs >= research_min_obs and std_val > 1e-8:
                     att_series = df[wiki_col]
                     att_result = {
                         "primary": wiki_col,
                         "secondary": None,
                         "pass": True,
-                        "reason": "ordinary attention fallback validation pass: Wikipedia single-source self-validation succeeded",
+                        "strict_pass": False,
+                        "validation_tier": "research",
+                        "reason": "ordinary attention research fallback pass: Wikipedia single-source proxy has sufficient coverage and variation",
                         "attention_validation_mode": "wiki_single",
-                        "validation_method": "single_source_self_validation",
+                        "validation_method": "single_source_research_proxy",
                         "overlap_obs_total": int(valid_obs),
                         "overlap_obs_window": int(recent_df.notna().sum()),
                         "attempts": att_failures,
@@ -611,6 +617,8 @@ class CrossValidator:
                     "primary": "google_or_gdelt_attention",
                     "secondary": "z_wiki_attention_7d",
                     "pass": False,
+                    "strict_pass": False,
+                    "validation_tier": "excluded",
                     "reason": "ordinary attention strict validation failed: neither Google+Wiki nor GDELT+Wiki passed",
                     "attention_validation_mode": "none",
                     "validation_method": "rolling_zscore_lead_lag_shock_overlap",
@@ -640,26 +648,31 @@ class CrossValidator:
             })
             if res.get("pass"):
                 res["reason"] = f"negative attention strict validation pass by {mode}"
+                res["strict_pass"] = True
+                res["validation_tier"] = "strict"
                 neg_result = res
                 neg_series = ser
                 break
         if neg_result is None:
-            # 回退到维基百科单源自校验
+            # 研究级回退：负面注意力可由 Wiki 负面主题访问占比代理。
             wiki_neg_col = "z_wiki_negative_ratio_7d"
-            if wiki_neg_col in df.columns:
+            research_min_obs = max(10, int(getattr(self.cfg, "research_min_observations", 30)))
+            if getattr(self.cfg, "enable_research_fallbacks", True) and wiki_neg_col in df.columns:
                 valid_obs = df[wiki_neg_col].notna().sum()
                 window = min(int(self.cfg.attention_validation_window), len(df))
                 recent_df = df[wiki_neg_col].tail(window)
                 std_val = recent_df.std(skipna=True)
-                if valid_obs >= self.cfg.attention_validation_min_overlap and std_val > 1e-8:
+                if valid_obs >= research_min_obs and std_val > 1e-8:
                     neg_series = df[wiki_neg_col]
                     neg_result = {
                         "primary": wiki_neg_col,
                         "secondary": None,
                         "pass": True,
-                        "reason": "negative attention fallback validation pass: Wikipedia single-source self-validation succeeded",
+                        "strict_pass": False,
+                        "validation_tier": "research",
+                        "reason": "negative attention research fallback pass: Wikipedia negative-topic proxy has sufficient coverage and variation",
                         "negative_attention_validation_mode": "wiki_single",
-                        "validation_method": "single_source_self_validation",
+                        "validation_method": "single_source_research_proxy",
                         "overlap_obs_total": int(valid_obs),
                         "overlap_obs_window": int(recent_df.notna().sum()),
                         "attempts": neg_failures,
@@ -670,6 +683,8 @@ class CrossValidator:
                     "primary": "google_or_gdelt_negative",
                     "secondary": "z_wiki_negative_ratio_7d",
                     "pass": False,
+                    "strict_pass": False,
+                    "validation_tier": "excluded",
                     "reason": "negative attention strict validation failed: neither Google+Wiki nor GDELT+Wiki passed",
                     "negative_attention_validation_mode": "none",
                     "validation_method": "rolling_zscore_lead_lag_shock_overlap",
@@ -704,7 +719,11 @@ class CrossValidator:
     def validate_all(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, dict]:
         out = df.copy()
         report: Dict[str, Any] = {
-            "strict_validation_policy": "Only cross-validated variables enter the pricing model.",
+            "validation_policy": (
+                "Strict cross-validated variables enter at highest confidence. "
+                "Research-grade proxies may enter Biais/Liu behavioral layers when enabled, "
+                "with validation_tier recorded and lower confidence reflected in model status/output."
+            ),
             "variables": {},
             "excluded_variables": [],
         }
@@ -938,12 +957,20 @@ class CrossValidator:
 
         ordinary_attention_pass = bool(att_res["pass"])
         negative_attention_pass = bool(neg_res["pass"])
+        ordinary_attention_strict_pass = bool(att_res.get("strict_pass", att_res["pass"]))
+        negative_attention_strict_pass = bool(neg_res.get("strict_pass", neg_res["pass"]))
         liu_pass_count = sum([momentum_pass, ordinary_attention_pass, negative_attention_pass, activity_growth_pass])
-        # Liu 严格折价层必须有 momentum + 至少一个 attention 维度；
-        # momentum + activity growth 只能作为 diagnostic，不进入 strict Liu discount。
-        liu_module_pass = bool(momentum_pass and (ordinary_attention_pass or negative_attention_pass))
-        liu_full_pass = bool(momentum_pass and ordinary_attention_pass and negative_attention_pass)
-        liu_momentum_activity_diagnostic = bool(momentum_pass and activity_growth_pass and not liu_module_pass)
+        # Liu-Tsyvinski 的动量本身是可复刻的核心结论。
+        # attention 通过时升级为 attention-enhanced；没有 attention 时允许低置信 momentum-only 入模。
+        liu_attention_enhanced = bool(momentum_pass and (ordinary_attention_pass or negative_attention_pass))
+        liu_momentum_only = bool(
+            getattr(self.cfg, "allow_liu_momentum_only", True)
+            and momentum_pass
+            and not liu_attention_enhanced
+        )
+        liu_module_pass = bool(liu_attention_enhanced or liu_momentum_only)
+        liu_full_pass = bool(momentum_pass and ordinary_attention_strict_pass and negative_attention_strict_pass)
+        liu_momentum_activity_diagnostic = bool(momentum_pass and activity_growth_pass and not liu_attention_enhanced)
 
         if not bdk_pass:
             model_status = "No Strict Valuation"
@@ -999,11 +1026,17 @@ class CrossValidator:
             "liu_pass_count": liu_pass_count,
             "liu_module_pass": liu_module_pass,
             "liu_full_pass": liu_full_pass,
+            "liu_attention_enhanced": liu_attention_enhanced,
+            "liu_momentum_only": liu_momentum_only,
             "liu_momentum_activity_diagnostic": liu_momentum_activity_diagnostic,
             "liu_components": {
                 "momentum_pass": momentum_pass,
                 "ordinary_attention_pass": ordinary_attention_pass,
+                "ordinary_attention_strict_pass": ordinary_attention_strict_pass,
+                "ordinary_attention_tier": att_res.get("validation_tier"),
                 "negative_attention_pass": negative_attention_pass,
+                "negative_attention_strict_pass": negative_attention_strict_pass,
+                "negative_attention_tier": neg_res.get("validation_tier"),
                 "activity_growth_pass": activity_growth_pass,
             },
             "model_status": model_status,

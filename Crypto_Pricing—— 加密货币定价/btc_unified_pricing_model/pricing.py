@@ -244,7 +244,8 @@ class UnifiedBTCPricingModelV12:
                 ],
                 "important_model_boundary_cn": (
                     "Biais 与 Liu-Tsyvinski 模块在本代码中是基于论文机制的启发式折价层，"
-                    "不是原论文参数的直接估计。未通过交叉验证的数据不参与严格定价。"
+                    "不是原论文参数的直接估计。核心 BDK 仍要求严格交叉验证；"
+                    "Biais/Liu 行为层允许带 validation_tier 标记的研究级代理入模。"
                 ),
                 "active_addresses_usage_cn": "active addresses 只在 BDK 链上基本面锚中使用，避免 network factor 重复计数。",
                 "latest_date": str(latest["date"]),
@@ -284,7 +285,8 @@ class UnifiedBTCPricingModelV12:
             ],
             "important_model_boundary_cn": (
                 "Biais 与 Liu-Tsyvinski 模块在本代码中是基于论文机制的启发式折价层，"
-                "不是原论文参数的直接估计。未通过交叉验证的数据不参与严格定价。"
+                "不是原论文参数的直接估计。核心 BDK 仍要求严格交叉验证；"
+                "Biais/Liu 行为层允许带 validation_tier 标记的研究级代理入模。"
             ),
             "active_addresses_usage_cn": "active addresses 只在 BDK 链上基本面锚中使用，避免 network factor 重复计数。",
             "latest_date": str(latest["date"]),
@@ -474,10 +476,16 @@ class UnifiedBTCPricingModelV12:
                 "hashrate_stress_ehs": s["hr_stress"],
                 "active_addresses_stress": s["aa_stress"],
                 "bdk_anchor_price": bdk,
+                "biais_score": float(latest_biais_score) if pd.notna(latest_biais_score) else np.nan,
                 "biais_discount": biais_discount,
+                "liu_score": float(latest_liu_score) if pd.notna(latest_liu_score) else np.nan,
                 "liu_discount": liu_discount,
                 "combined_discount": combined_discount,
                 "included_modules": "+".join(included_modules),
+                "biais_components": str(module.get("biais_components", {})),
+                "liu_components": str(module.get("liu_components", {})),
+                "liu_attention_enhanced": bool(module.get("liu_attention_enhanced", False)),
+                "liu_momentum_only": bool(module.get("liu_momentum_only", False)),
                 "strict_lower_point": strict_point,
                 "strict_lower_band_low": lower,
                 "strict_lower_band_high": upper,
@@ -522,6 +530,7 @@ class UnifiedBTCPricingModelV12:
                 "sensitivity_score_shocks": list(self.cfg.sensitivity_score_shocks),
             },
             "discount_sensitivity_core_lower_bound": sensitivity_rows,
+            "three_paper_framework_rows": scenario_rows,
             "confidence_level": self._confidence_level(
                 actual_model_status,
                 validation_report.get("validated_data_quality_score"),
