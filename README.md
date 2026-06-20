@@ -1,9 +1,11 @@
 # QuantStrat: Quantitative Finance Research Platform: Replication and Extension (UIUC MSFE 2026)
 
 This project is a collaborative quantitative finance research initiative between **QuantStrat** and the **Master of Science in Financial Engineering (MSFE)** program at the **University of Illinois Urbana-Champaign (UIUC)** for Summer 2026. Focusing on active contracts in the Chinese commodity futures market, the project adopts rigorous academic methodologies to replicate and extend literature-anchored hypotheses. It constructs a quantitative research system encompassing commodity futures behavioral anomalies, frequency-domain diagnostics for high-order heteroscedasticity, and dynamic risk management.
+
 本项目是 **QuantStrat** 与**伊利诺伊大学金融工程硕士项目（UIUC MSFE）** 2026年夏季的量化金融研究合作项目。项目主要针对**中国商品期货市场主力合约**，采用学术规范与研究方法，以文献为锚进行复现与拓展检验，构建了一套包含**商品期货行为金融异象、高阶异方差频域检验与动态风险管理**的量化研究参考系统。
 
 Currently, three core research modules and empirical analyses are complete, and two future research directions are planned.
+
 目前项目已基本完成3个核心研究模块的开发与实证分析，并规划了未来深入研究的两个方向。
 
 ---
@@ -39,7 +41,7 @@ Currently, three core research modules and empirical analyses are complete, and 
         *   包含交互项的 OLS 回归表明，交易活跃度评分 (`activity_score`) 是中长线趋势策略（MA60, MA120）收益的显著正向驱动力（对 MA60 long_short 的系数为 $3.18 \times 10^{-4}$，t 值为 **3.33**；对 MA120 long_short 的系数为 $3.28 \times 10^{-4}$，t 值为 **3.44**）。此外，对于长线策略（MA120 long_short），处于高波状态 (`high_vol_dummy`) 对其收益有显著的负向冲击（系数为 $-4.79 \times 10^{-4}$，t 值为 **-2.39**），反映了长线趋势跟踪策略在高波动率市场中容易遭受双边洗盘（whipsaws）导致损耗。
     *   **Out-of-Sample Performance Decay Due to Selection Bias / 选择偏差与样本外表现的系统性大幅衰减** (based on / 基于 `04_post_selection_decay_summary.csv` and / 与 `04_all_strategy_decay_summary.csv`)：
         *   In the pool of 26 candidates, only **2** strategies show robust performance across all periods (ROBUST): `BREAKOUT_120_long_flat` (IS Sharpe: **0.26** → OOS: **0.52** → Pseudo-Live: **0.49**) and `MA_60_long_short` (IS Sharpe: **0.18** → OOS: **0.16** → Pseudo-Live: **0.19**). These were not selected in the Top 10 due to moderate IS performance. Conversely, the selected Top 10 strategies suffer from severe selection bias: their mean Sharpe ratio decays from **0.68** during the IS phase to **0.35** in the OOS phase, and further declines to **0.11** in the Pseudo-Live phase (medians drop from **0.67** to **0.40** and **0.07**, respectively). The median Sharpe ratio retention rate is only **55.47%** in OOS and **16.56%** in Pseudo-Live.
-        *   在 26 个候选策略池中，仅有 **2** 个策略在全区间表现稳健（ROBUST）：`BREAKOUT_120_long_flat`（IS 夏普 **0.26** → OOS **0.52** → Pseudo-Live **0.49**）和 `MA_60_long_short`（IS 夏普 **0.18** → OOS **0.16** → Pseudo-Live **0.19**）。它们由于在样本内（IS）表现适中而未能入选 Top 10。相反，IS 筛选出的 Top 10 策略呈现出严重的选择偏差（Selection Bias），其夏普比率均值从 IS 阶段的 **0.68** 大幅降至 OOS 阶段的 **0.35**，并在 Pseudo-Live 阶段进一步降至 **0.11**（中位数分别从 **0.67** 降至 **0.40** 和 **0.07**）；各策略夏普比率保留率中位数在 OOS 和 Pseudo-Live 阶段分别仅为 **55.47%** 和 **16.56%**。
+        *   在 26 个候选策略池中，仅有 **2** 个策略在全区间表现稳健（ROBUST）：`BREAKOUT_120_long_flat`（IS 夏普 **0.26** → OOS **0.52** → Pseudo-Live **0.49**）和 `MA_60_long_short`（IS 夏普 **0.18** → OOS **0.16** → Pseudo-Live **0.19**）。它们由于在样本内（IS）表现适中而未能入选 Top 10。相反，IS 筛选出的 Top 10 策略呈现出严重的选择偏差（Selection Bias），其夏普比率均值从 IS 阶段的 **0.68** 大幅降至 OOS 阶段 of **0.35**，并在 Pseudo-Live 阶段进一步降至 **0.11**（中位数分别从 **0.67** 降至 **0.40** 和 **0.07**）；各策略夏普比率保留率中位数在 OOS 和 Pseudo-Live 阶段分别仅为 **55.47%** 和 **16.56%**。
 
 ---
 
@@ -131,11 +133,13 @@ Currently, three core research modules and empirical analyses are complete, and 
 ## IV. Planned Research Modules and Future Directions / 四、 规划中研究模块与后续方向
 
 The project will further explore the following two quantitative finance topics, progressively completing the replication and extension of relevant academic literature:
+
 本项目后续将进一步探索以下两个量化金融课题，并逐步完成相关学术文献的复现与拓展检验：
 
 ### 1. Momentum, Reversal, and Trend-Following / 动量 / 反转 / 趋势跟踪
 *   **Research Topics / 研究主题**：
     Price continuation, mean reversion, trend rule construction, volatility-adaptive timing adjustments, and two-state regime-switching (Regime-Switching) models.
+
     价格延续、均值反转、趋势规则构建、波动率自适应调整以及两状态机制切换（Regime-Switching）。
 *   **Core Literature / 核心文献**：
     *   *Ammann, Moellenbeck, and Schmid (2011)* — Feasible Momentum Strategies in the US Stock Market
@@ -151,6 +155,7 @@ The project will further explore the following two quantitative finance topics, 
 ### 2. Machine Learning, AI, and Forecasting Models / 机器学习 / AI / 预测模型
 *   **Research Topics / 研究主题**：
     High-dimensional asset forecasting, Explainable AI (XAI) in asset allocation, deep reinforcement learning trading systems, and non-linear forecasting model comparisons.
+
     高维资产预测、可解释人工智能（XAI）在资产配置中的应用、深度强化学习交易系统以及多模型（如决策树、神经网络等）非线性预测比较。
 *   **Core Literature / 核心文献**：
     *   *Afolabi et al. (2017)* — Hierarchical Meta-Learning in Time Series Forecasting for Improved Inference-Less Machine Learning
