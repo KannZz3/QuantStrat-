@@ -25,42 +25,42 @@ $$
 ```mermaid
 graph TD
     %% 数据采集
-    subgraph Fetcher ["多源数据采集层 (fetchers.py)"]
-        A1["价格源:<br/>CoinGecko / Binance / Kraken"]
-        A2["链上源:<br/>Blockchain / CoinMetrics / Blockchair"]
-        A3["情绪源:<br/>Wikipedia / GDELT / ETF Flow"]
+    subgraph Fetcher ["1. 数据采集层 (fetchers.py)"]
+        A1["价格数据<br/>(交易所 / 聚合源)"]
+        A2["链上数据<br/>(全网算力 / 活跃地址)"]
+        A3["情绪与宏观<br/>(百科 / 新闻 / ETF)"]
     end
 
     %% 学术验证
-    subgraph Validator ["学术交叉验证层 (validator.py)"]
-        B1["多源数据对齐与清洗"]
-        B2["偏离度与相关性校验<br/>(Gap & Correlation)"]
-        B3{"数据验证<br/>是否通过?"}
-        B4["输出 Strict-tier 数据"]
-        B5["降级为 Research-tier 数据"]
+    subgraph Validator ["2. 交叉验证层 (validator.py)"]
+        B1["多源数据对齐清洗"]
+        B2["偏离度与相关性校验"]
+        B3{"双源验证<br/>是否通过?"}
+        B4["输出严格级数据<br/>(Strict-tier)"]
+        B5["输出研究级数据<br/>(Research-tier)"]
     end
 
     %% 核心计算
-    subgraph Engine ["核心特征与定价引擎 (processor.py & pricing.py)"]
-        C1["特征转换:<br/>收益率 / 回撤 / Z-Score"]
-        C2["BDK 链上基本面锚 V_BDK<br/>(样本内弹性 OLS 重校准)"]
-        C3["Biais 均衡交易折价 D_Biais<br/>(下行风险惩罚化)"]
-        C4["Liu 动量与注意力折价 D_Liu<br/>(代理变量权重折减)"]
+    subgraph Engine ["3. 估值与折价层 (pricing.py)"]
+        C1["特征指标转化<br/>(收益 / 回撤 / Z分数)"]
+        C2["BDK 基本面价值锚<br/>(OLS 弹性重校准)"]
+        C3["Biais 交易摩擦折价<br/>(风险下行惩罚化)"]
+        C4["Liu 动量注意力折价<br/>(研究级权重折减)"]
     end
 
     %% 级联输出
-    subgraph Output ["评估与输出层 (io_outputs.py)"]
-        D1["自适应模型降级判断<br/>(Model Downgrade)"]
-        D2["区间宽度自适应调整<br/>(含波动率下限)"]
-        D3["4大压力情景估值输出"]
-        D4["JSON & CSV 报告生成"]
+    subgraph Output ["4. 评估与输出层 (io_outputs.py)"]
+        D1["模型自适应降级"]
+        D2["宽度自适应调整<br/>(设定波动率下限)"]
+        D3["多情景估值输出<br/>(Base / Core / Severe / Extreme)"]
+        D4["报告与 CSV 输出"]
     end
 
     %% 连接线
     A1 & A2 & A3 --> B1
     B1 --> B2 --> B3
-    B3 -- Yes --> B4 --> C1
-    B3 -- No --> B5 --> C1
+    B3 -- 是 --> B4 --> C1
+    B3 -- 否 --> B5 --> C1
     C1 --> C2 & C3 & C4
     C2 & C3 & C4 --> D1
     D1 --> D2 --> D3 --> D4
