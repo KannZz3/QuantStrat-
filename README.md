@@ -1,4 +1,3 @@
-# QuantStrat: 量化金融研究项目复现与拓展平台 (UIUC MSFE 2026)
 # QuantStrat: Quantitative Finance Research Platform: Replication and Extension (UIUC MSFE 2026)
 
 本项目是 **QuantStrat** 与**伊利诺伊大学金融工程硕士项目（UIUC MSFE）** 2026年夏季的量化金融研究合作项目。项目主要针对**中国商品期货市场主力合约**，采用学术规范与研究方法，以文献为锚进行复现与拓展检验，构建了一套包含**商品期货行为金融异象、高阶异方差频域检验与动态风险管理**的量化研究参考系统。
