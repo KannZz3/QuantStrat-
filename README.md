@@ -14,7 +14,7 @@ Currently, four core research modules and empirical analyses are complete, and t
 
 *   **Research Background / 研究背景**：
     *   Replicates and extends the commodity futures momentum/reversal/trend-following literature to systematically answer three practical questions for Chinese commodity futures: (Q1) do the signals exist and are they statistically validated? (Q2) how long do the signals typically last (duration distribution)? (Q3) what is the survival probability of an active signal over future horizons? All conclusions are derived exclusively from full-history panel data covering 11 commodity futures contracts.
-    *   针对中国商品期货市场，复刻与拓展动量/反转/趋势跟踪文献，系统回答三个实战问题：（Q1）信号是否存在并经统计验证？（Q2）信号历史上持续多久（持续期分布）？（Q3）当前活跃信号未来 N 期内的存活概率？所有结论严格基于覆盖 11 个主力合约的全历史面板数据。
+    *   针对中国商品期货市场，复刻与拓展动量/反转/趋势跟踪文献，系统回答三个问题：（Q1）信号是否存在并经统计验证？（Q2）信号历史上持续多久（持续期分布）？（Q3）当前活跃信号未来 N 期内的存活概率？所有结论严格基于覆盖 11 个主力合约的全历史面板数据。
 
 *   **Framework & Workflow / 框架与流程**：
     *   Three sub-modules each follow an identical three-question pipeline: **Q1 Existence Model** (best-model selection via Newey-West t-statistics with bootstrap p-values, full-period confirmed/candidate grading), **Q2 Duration Distribution** (episode-level Kaplan-Meier style active-duration statistics: mean, median, Q25/Q75), and **Q3 Survival / End-Risk** (forward horizon-conditional ending probabilities from historical episodes). Momentum uses J-day look-back / K-day skip / validated episode windows; Reversal applies three detector types (FastREV, TSREV, RAREV) with independent L/K parameters; Trend uses h-day rolling channel with K-day confirmation threshold.
