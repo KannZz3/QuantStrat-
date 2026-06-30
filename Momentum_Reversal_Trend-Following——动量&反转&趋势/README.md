@@ -1,6 +1,6 @@
 # Momentum, Reversal, and Trend-Following -- 动量、反转与趋势跟踪
 
-本目录是 QuantStrat 中的商品期货趋势、动量与反转研究模块，围绕中国商品期货主力连续合约构建三类可复现的日频统计框架：**Trend-Following / 趋势跟踪**、**Momentum / 时间序列动量** 与 **Reversal / 后续反转**。研究对象为 11 个主力连续合约，数据、特征、模型筛选、状态机和结论表均由本目录下的三个 notebook 生成。
+本目录是 QuantStrat 中的商品期货趋势、动量与反转研究模块，围绕中国商品期货主力连续合约构建三类可复现的日频统计框架：**Trend-Following / 趋势跟踪**、**Momentum / 时间序列动量** 与 **Reversal / 后续反转**。研究对象为 11 个主力连续合约，数据、特征、模型筛选、状态机和结论表均基于本目录下的三个 notebook。
 
 > **研究边界**：本模块当前定位为**全样本历史统计研究**。最佳窗口、模型质量分级、状态识别、episode duration 与结束概率均在完整历史样本上计算，尚未切分 in-sample / out-of-sample，也未进行 walk-forward 或 pseudo-live 验证。因此，本文档中的结论用于描述样本内历史结构和不同品种之间的经验差异，不构成实时交易信号或样本外预测结论。
 
