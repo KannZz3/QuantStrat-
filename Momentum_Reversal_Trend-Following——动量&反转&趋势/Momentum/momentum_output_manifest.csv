@@ -1,0 +1,8 @@
+file,scope,question,description
+momentum_core_current_summary.csv,CURRENT,ALL,当前动量主表：动量存在、持续周期、消失风险、最佳动量模型汇总
+momentum_q1_existence_current.csv,CURRENT,Q1,当前是否存在/确立动量：方向、强度、一致性、动量年龄
+momentum_q2_duration_current.csv,CURRENT,Q2,当前动量还能持续多久：剩余寿命、未来N日消失概率、历史同方向duration摘要
+momentum_q3_end_current.csv,CURRENT,Q3,当前动量是否消失/是否有消失风险：确认消失、极端延展、消失触发项
+momentum_hist_q1_existence_model.csv,FULL_HISTORY,Q1,全历史动量存在频率、方向分布、最佳动量模型有效性
+momentum_hist_q2_duration_distribution.csv,FULL_HISTORY,Q2,全历史动量episode持续时间分布：均值、中位数、分位数、样本数
+momentum_hist_q3_end_risk_survival.csv,FULL_HISTORY,Q3,全历史动量消失风险：按方向、risk状态、horizon统计未来消失概率
