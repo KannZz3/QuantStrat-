@@ -241,7 +241,7 @@ $$
 
 ## 六、当前趋势截面结论
 
-趋势当前截面日期为 **2026-06-29**。
+趋势当前截面日期为 **2026-06-29**。当前寿命估计只在“趋势已确立”且历史同方向、同年龄可比完成 episode 不少于 5 个时输出；否则表内直接说明“不适用”或“样本不足”。
 
 | 合约 | 日期/收盘 | Q1: 当前趋势存在 | 模型 | Q2: 预计剩余 | Q3: 结束判断 |
 | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -279,10 +279,10 @@ $$
 | FG 玻璃 | 2016-01-05 to 2026-06-30, n=2545 | signal 20.0%, validated 17.8%, 主导 UP 67.8% | J=40,K=1, CONFIRMED, t=2.13, hit=53.7%, p=0.018 | UP: median 8d, mean 15.4d, n=20, ended=20, MEDIUM, risk_rate=50.0% | NO_RISK: 5d=40.1%,10d=53.5%,20d=67.6%<br>RISK: 5d=10.2%,10d=29.5%,20d=61.4% |
 | LH 生猪 | 2021-01-08 to 2026-06-30, n=1324 | signal 43.0%, validated 37.3%, 主导 DOWN 72.7% | J=20,K=5, CANDIDATE, t=1.56, hit=54.8%, p=0.058 | DOWN: median 5d, mean 10.9d, n=33, ended=33, MEDIUM, risk_rate=30.3% | NO_RISK: 5d=42.1%,10d=61.7%,20d=82.6%<br>RISK: 5d=20.2%,10d=37.9%,20d=71.8% |
 | M 豆粕 | 2016-01-05 to 2026-06-30, n=2545 | signal 48.6%, validated 28.1%, 主导 UP 53.5% | J=3,K=20, CANDIDATE, t=1.36, hit=51.6%, p=0.068 | UP: median 2d, mean 2.4d, n=161, ended=160, HIGH, risk_rate=41.6% | NO_RISK: 5d=95.7%,10d=100.0%,20d=100.0%<br>RISK: 5d=93.7%,10d=100.0%,20d=100.0% |
-| MA 甲醇 | 2016-01-05 to 2026-06-30, n=2545 | signal 51.3%, validated 0.0%, 主导 NA | J=3,K=20, DIAGNOSTIC_ONLY, t=0.73, hit=50.4%, p=0.325 | NA | NA |
+| MA 甲醇 | 2016-01-05 to 2026-06-30, n=2545 | signal 51.3%, validated 0.0%, 无验证确立方向 | J=3,K=20, DIAGNOSTIC_ONLY, t=0.73, hit=50.4%, p=0.325 | 验证确立=0，无可统计 episode | 验证确立=0，不适用 |
 | SA 纯碱 | 2019-12-06 to 2026-06-30, n=1589 | signal 33.0%, validated 12.8%, 主导 DOWN 54.7% | J=2,K=2, CONFIRMED, t=2.36, hit=55.0%, p=0.015 | DOWN: median 1d, mean 1.5d, n=74, ended=74, HIGH, risk_rate=41.9% | NO_RISK: 5d=100.0%,10d=100.0%,20d=100.0%<br>RISK: 5d=100.0%,10d=100.0%,20d=100.0% |
 | SP 纸浆 | 2018-11-27 to 2026-06-30, n=1839 | signal 19.5%, validated 17.1%, 主导 UP 63.7% | J=40,K=20, CONFIRMED, t=3.41, hit=66.7%, p=0.000 | UP: median 4d, mean 11.8d, n=17, ended=17, LOW, risk_rate=23.5% | NO_RISK: 5d=39.1%,10d=60.9%,20d=89.1%<br>RISK: 5d=8.1%,10d=17.7%,20d=29.0% |
-| SR 白糖 | 2016-01-05 to 2026-06-30, n=2545 | signal 31.7%, validated 0.0%, 主导 NA | J=2,K=2, DIAGNOSTIC_ONLY, t=1.34, hit=48.8%, p=0.080 | NA | NA |
+| SR 白糖 | 2016-01-05 to 2026-06-30, n=2545 | signal 31.7%, validated 0.0%, 无验证确立方向 | J=2,K=2, DIAGNOSTIC_ONLY, t=1.34, hit=48.8%, p=0.080 | 验证确立=0，无可统计 episode | 验证确立=0，不适用 |
 | V PVC | 2016-01-05 to 2026-06-30, n=2545 | signal 51.9%, validated 31.7%, 主导 UP 51.3% | J=3,K=1, CONFIRMED, t=2.16, hit=50.9%, p=0.015 | UP: median 2d, mean 2.6d, n=162, ended=162, HIGH, risk_rate=36.4% | NO_RISK: 5d=96.1%,10d=99.3%,20d=100.0%<br>RISK: 5d=92.7%,10d=100.0%,20d=100.0% |
 
 全历史动量的直接结论：
@@ -295,30 +295,30 @@ $$
 
 ## 八、当前动量截面结论
 
-动量当前截面日期为 **2026-06-30**，这是当前仓库动量 CSV 的实际最新日期。
+动量当前截面日期为 **2026-06-30**，这是当前仓库动量 CSV 的实际最新日期。当前寿命估计只在“动量已验证确立”且历史同方向、同年龄可比完成 episode 不少于 5 个时输出；已确认消失或未确立动量均不计算剩余寿命。
 
 | 合约 | 日期/收盘 | Q1: 当前动量存在 | 模型 | Q2: 预计剩余 | Q3: 消失判断 |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| AG 沪银 | 2026-06-30, close=13966 | 未确立动量, side=UP, MOM=0.90, MCS=1.00 | J=2,K=1, CONFIRMED | NA | risk=N, confirmed=N, NA |
-| CF 棉花 | 2026-06-30, close=16065 | 未确立动量, side=UP, MOM=0.78, MCS=0.67 | J=3,K=2, CONFIRMED | NA | risk=N, confirmed=N, NA |
+| AG 沪银 | 2026-06-30, close=13966 | 未确立动量, side=UP, MOM=0.90, MCS=1.00 | J=2,K=1, CONFIRMED | 未确立动量，不计算 | risk=N, confirmed=N；未确立动量，不适用 |
+| CF 棉花 | 2026-06-30, close=16065 | 未确立动量, side=UP, MOM=0.78, MCS=0.67 | J=3,K=2, CONFIRMED | 未确立动量，不计算 | risk=N, confirmed=N；未确立动量，不适用 |
 | EB 苯乙烯 | 2026-06-30, close=7368 | 已确立 DOWN 且有消失风险, age=10d, MOM=-10.22, MCS=0.70 | J=20,K=5, CONFIRMED | median=6d, mean=8.8d, n=12, OK | risk=Y, confirmed=N, 5d=50.0%,10d=75.0%,20d=83.3% |
-| FG 玻璃 | 2026-06-30, close=967 | 动量已确认消失, side=DOWN, MOM=-4.63, MCS=0.57 | J=40,K=1, CONFIRMED | NA | risk=N, confirmed=Y, NA |
-| LH 生猪 | 2026-06-30, close=12365 | 未确立动量, side=UP, MOM=3.77, MCS=0.50 | J=20,K=5, CANDIDATE | NA | risk=N, confirmed=N, NA |
+| FG 玻璃 | 2026-06-30, close=967 | 动量已确认消失, side=DOWN, MOM=-4.63, MCS=0.57 | J=40,K=1, CONFIRMED | 已确认消失，不计算 | risk=N, confirmed=Y；已确认消失，不适用 |
+| LH 生猪 | 2026-06-30, close=12365 | 未确立动量, side=UP, MOM=3.77, MCS=0.50 | J=20,K=5, CANDIDATE | 未确立动量，不计算 | risk=N, confirmed=N；未确立动量，不适用 |
 | M 豆粕 | 2026-06-30, close=2951 | 已确立 UP, age=2d, MOM=1.01, MCS=0.67 | J=3,K=20, CANDIDATE | median=1d, mean=2.0d, n=108, OK | risk=N, confirmed=N, 5d=94.4%,10d=100.0%,20d=100.0% |
-| MA 甲醇 | 2026-06-30, close=2442 | 未确立动量, side=UP, MOM=0.01, MCS=0.67 | J=3,K=20, DIAGNOSTIC_ONLY | NA | risk=N, confirmed=N, NA |
-| SA 纯碱 | 2026-06-30, close=1084 | 动量已确认消失, side=DOWN, MOM=-0.78, MCS=0.50 | J=2,K=2, CONFIRMED | NA | risk=N, confirmed=Y, NA |
-| SP 纸浆 | 2026-06-30, close=4700 | 未确立动量, side=DOWN, MOM=-10.59, MCS=0.57 | J=40,K=20, CONFIRMED | NA | risk=N, confirmed=N, NA |
-| SR 白糖 | 2026-06-30, close=5281 | 未确立动量, side=UP, MOM=1.97, MCS=1.00 | J=2,K=2, DIAGNOSTIC_ONLY | NA | risk=N, confirmed=N, NA |
-| V PVC | 2026-06-30, close=4354 | 已确立 DOWN, age=8d, MOM=-2.21, MCS=0.67 | J=3,K=1, CONFIRMED | NA | risk=N, confirmed=N, NA |
+| MA 甲醇 | 2026-06-30, close=2442 | 未确立动量, side=UP, MOM=0.01, MCS=0.67 | J=3,K=20, DIAGNOSTIC_ONLY | 未确立动量，不计算 | risk=N, confirmed=N；未确立动量，不适用 |
+| SA 纯碱 | 2026-06-30, close=1084 | 动量已确认消失, side=DOWN, MOM=-0.78, MCS=0.50 | J=2,K=2, CONFIRMED | 已确认消失，不计算 | risk=N, confirmed=Y；已确认消失，不适用 |
+| SP 纸浆 | 2026-06-30, close=4700 | 未确立动量, side=DOWN, MOM=-10.59, MCS=0.57 | J=40,K=20, CONFIRMED | 未确立动量，不计算 | risk=N, confirmed=N；未确立动量，不适用 |
+| SR 白糖 | 2026-06-30, close=5281 | 未确立动量, side=UP, MOM=1.97, MCS=1.00 | J=2,K=2, DIAGNOSTIC_ONLY | 未确立动量，不计算 | risk=N, confirmed=N；未确立动量，不适用 |
+| V PVC | 2026-06-30, close=4354 | 已确立 DOWN, age=8d, MOM=-2.21, MCS=0.67 | J=3,K=1, CONFIRMED | 同龄可比完成样本 n=4<5，当前寿命估计不输出 | risk=N, confirmed=N；DOWN/NO_RISK 历史 5/10/20d 消失概率=93.7%/100.0%/100.0% |
 
 当前动量的直接结论：
 
 - 当前仍处于验证确立动量的合约只有 EB、M、V。
 - EB 为 DOWN 动量且进入 `MOMEndRisk`，但未确认消失；历史同类剩余寿命 median=6d，20 日内消失概率 83.3%。
 - M 为 UP 动量，age=2d，但历史同类 5 日内消失概率已达 94.4%，说明当前动量在历史统计上偏短周期。
-- V 为 DOWN 动量且未触发消失风险，但当前表没有给出可用剩余寿命估计。
+- V 为 DOWN 动量且未触发消失风险；同龄可比完成样本只有 4 个，低于当前寿命估计最少 5 个样本要求，但全历史 DOWN/NO_RISK 状态仍可给出 5/10/20 日消失概率。
 - FG 与 SA 已被 `MOMEndConfirmed` 标记为动量确认消失。
-- AG、CF、LH、MA、SP、SR 当前未确立动量；其中 MA 与 SR 的历史验证确立频率为 0.0%，当前只能描述原始信号状态，不能写成已验证动量。
+- AG、CF、LH、MA、SP、SR 当前未确立动量，因此剩余寿命和消失概率不适用；其中 MA 与 SR 的历史验证确立频率为 0.0%，当前只能描述原始信号状态，不能写成已验证动量。
 
 ---
 
