@@ -4,13 +4,36 @@ This project is a collaborative quantitative finance research initiative between
 
 本项目是 **QuantStrat** 与**伊利诺伊大学金融工程硕士项目（UIUC MSFE）** 2026年夏季的量化金融 research 合作项目。项目主要针对**中国商品期货市场主力合约**，采用学术规范与研究方法，以文献为锚进行复现与拓展检验，构建了一套包含**商品期货行为金融异象、高阶异方差频域检验与动态风险管理**的量化研究参考系统。
 
-Currently, three core research modules and empirical analyses are complete, and two future research directions are planned.
+Currently, four core research modules and empirical analyses are complete, and two future research directions are planned.
 
 目前项目已基本完成4个核心研究模块的开发与实证分析，并规划了未来深入研究的两个方向。
 
 ---
 
-## 1. Technical Anomalies, Activity Attenuation, and Post-Publication Decay in Commodity Futures / Market_Anomalies —— 商品期货技术分析异象、活跃度衰减与发表后衰减
+## 1. Momentum, Reversal, and Trend-Following in Commodity Futures / Momentum_Reversal_Trend-Following —— 动量、反转与趋势跟踪
+
+*   **Research Background / 研究背景**：
+    *   Replicates and extends the commodity futures momentum/reversal/trend-following literature to systematically answer three practical questions for Chinese commodity futures: (Q1) do the signals exist and are they statistically validated? (Q2) how long do the signals typically last (duration distribution)? (Q3) what is the survival probability of an active signal over future horizons? All conclusions are derived exclusively from full-history panel data covering 11 commodity futures contracts.
+    *   针对中国商品期货市场，复刻与拓展动量/反转/趋势跟踪文献，系统回答三个实战问题：（Q1）信号是否存在并经统计验证？（Q2）信号历史上持续多久（持续期分布）？（Q3）当前活跃信号未来 N 期内的存活概率？所有结论严格基于覆盖 11 个主力合约的全历史面板数据。
+
+*   **Framework & Workflow / 框架与流程**：
+    *   Three sub-modules each follow an identical three-question pipeline: **Q1 Existence Model** (best-model selection via Newey-West t-statistics with bootstrap p-values, full-period confirmed/candidate grading), **Q2 Duration Distribution** (episode-level Kaplan-Meier style active-duration statistics: mean, median, Q25/Q75), and **Q3 Survival / End-Risk** (forward horizon-conditional ending probabilities from historical episodes). Momentum uses J-day look-back / K-day skip / validated episode windows; Reversal applies three detector types (FastREV, TSREV, RAREV) with independent L/K parameters; Trend uses h-day rolling channel with K-day confirmation threshold.
+    *   三个子模块均遵循相同的三问流水线：**Q1 存在性模型**（Newey-West t 统计量 + bootstrap p 值，全历史品种级 CONFIRMED / CANDIDATE 评级）、**Q2 持续期分布**（episode 级 Kaplan-Meier 式有效活跃期统计：均值、中位数、Q25/Q75）、**Q3 存活/结束概率**（基于历史 episode 的前瞻 N 期条件结束概率）。动量使用 J 日回看 / K 日跳过 / 验证窗口；反转通过 FastREV / TSREV / RAREV 三类探测器（独立 L/K 参数）；趋势使用 h 日滚动通道 + K 日确认阈值。
+
+*   **Empirical Findings / 数据实证结论**：
+    *   **Trend-Following Is the Most Pervasive and Reliable Signal / 趋势跟踪是三类信号中覆盖最广、统计最稳健的** (based on / 基于 `trend_hist_q1_existence_model.csv` & `trend_hist_q2_duration_distribution.csv`)：
+        *   Across all 11 commodity futures, **10/11** pass CONFIRMED or CANDIDATE grading (only EB is DIAGNOSTIC_ONLY at the medium-difficulty threshold), and **4/11** reach full CONFIRMED status. The full-history `trend_exists_rate` ranges from **60.45%** to **72.18%** (median **68.28%**), meaning commodity futures are in a directional trend state for more than 60% of all trading days. The `trend_established_rate` (strictly validated trend episodes) ranges from **51.47%** to **69.77%** (median **65.13%**). Among HIGH-reliability contracts (20 direction-side pairs), mean active trend duration spans from **3.5 to 12.7 days** depending on the commodity and direction, with soybean meal (M UP: mean **11.3 days**, median **7 days**; M DOWN: mean **12.7 days**, median **10 days**) and PVC (V UP: mean **11.0 days**, median **7 days**; V DOWN: mean **11.9 days**, median **10 days**) showing the longest trend episodes. Short-cycle commodities such as White Sugar (SR UP: mean **4.1 days**, median **1 day**; SR DOWN: mean **3.5 days**, median **1 day**) exhibit the shortest trend durations.
+        *   全部 11 个主力合约中，**10/11** 通过 CONFIRMED 或 CANDIDATE 评级（仅 EB 在中等难度阈值下为 DIAGNOSTIC_ONLY），其中 **4/11** 达到 CONFIRMED。全历史 `trend_exists_rate` 范围为 **60.45%～72.18%**（中位数 **68.28%**），表明商品期货超过 60% 的交易日处于方向性趋势状态。`trend_established_rate`（严格验证趋势 episode）范围为 **51.47%～69.77%**（中位数 **65.13%**）。在 HIGH 可靠性合约的 20 个方向对中，趋势活跃期均值为 **3.5～12.7 天**，其中豆粕（M 多方均值 **11.3 天**，中位数 **7 天**；M 空方均值 **12.7 天**，中位数 **10 天**）与 PVC（V 多方均值 **11.0 天**，中位数 **7 天**；V 空方均值 **11.9 天**，中位数 **10 天**）趋势持续时间最长；白糖（SR 多方均值 **4.1 天**，中位数 **1 天**；SR 空方均值 **3.5 天**，中位数 **1 天**）趋势持续时间最短。
+    *   **Momentum Exists in High Frequency but Dissipates Rapidly / 动量信号高频存在但衰减极快** (based on / 基于 `momentum_hist_q1_existence_model.csv` & `momentum_hist_q2_duration_distribution.csv`)：
+        *   **7/11** commodity futures reach CONFIRMED status and **9/11** pass CONFIRMED or CANDIDATE grading. The full-history `mom_exists_rate` ranges from **19.47%** to **51.94%** (median **42.98%**). However, momentum signals are characteristically short-lived: among HIGH-reliability contracts (10 direction-side pairs), the mean active duration is only **1.5 to 2.6 days** (median universally **1–2 days**). White Sugar Pulp (SP) shows the longest momentum episodes (UP mean **11.8 days**, DOWN mean **9.5 days**), but with only LOW duration reliability due to small sample sizes. The HIGH-reliability group (AG, CF, M, SA, V) all have mean durations ≤ **2.6 days**, confirming that commodity futures momentum is a rapid-reversion short-duration phenomenon. The per-episode end-risk rate (probability of momentum ending within the next observation) for HIGH-reliability contracts ranges from **36.4% to 48.0%**, consistent with the short average duration.
+        *   **7/11** 个主力合约达到 CONFIRMED，**9/11** 通过 CONFIRMED 或 CANDIDATE 评级。全历史 `mom_exists_rate` 范围为 **19.47%～51.94%**（中位数 **42.98%**）。然而动量信号持续期极短：HIGH 可靠性合约（10 个方向对）的活跃期均值仅为 **1.5～2.6 天**（中位数全部为 **1～2 天**），白糖纸浆（SP）均值最长（多方 **11.8 天**、空方 **9.5 天**，但样本量小仅 LOW 可靠性），HIGH 可靠性组（AG、CF、M、SA、V）均值均不超过 **2.6 天**，证实商品期货动量是快速均值回归的短持续期现象。HIGH 可靠性合约的单期结束概率（end_risk_rate）为 **36.4%～48.0%**，与短均值持续期高度吻合。
+    *   **Reversal Signal Exists in Select Commodities with Highly Heterogeneous Duration / 反转信号存在于少数品种且持续期高度异质** (based on / 基于 `reversal_hist_q1_existence_model.csv` & `reversal_hist_q2_duration_distribution.csv`)：
+        *   **2/11** reach CONFIRMED (M via TSREV and SR via TSREV) and **9/11** pass CONFIRMED or CANDIDATE grading, but **2** remain DIAGNOSTIC_ONLY (EB and LH), whose `rev_validated_rate` = **0.000**. The full-history `rev_signal_rate` ranges from **3.77%** to **89.80%** (median **7.78%**), and `rev_validated_rate` ranges from **0.00%** to **85.71%** (median **3.10%**), revealing an extreme cross-sectional disparity: pure alkali (SA) via RAREV generates validated reversal observations on **85.71%** of days, while glass (FG) and cotton (CF) achieve validated rates of only **1.89%** and **3.10%** respectively. Among the two HIGH-reliability contracts (SR), the TSREV mean active duration is extremely short at **1.3 days** (median **1 day**), consistent with rapid mean reversion; while M (TSREV, MEDIUM reliability) shows a mean of **10.7–12.3 days** (median **6 days**), indicating a slower-cycle reversal structure.
+        *   **2/11** 达到 CONFIRMED（M 使用 TSREV 和 SR 使用 TSREV），**9/11** 通过 CONFIRMED 或 CANDIDATE 评级，但 **2** 个品种（EB、LH）仍为 DIAGNOSTIC_ONLY，其 `rev_validated_rate` = **0.000**。全历史 `rev_signal_rate` 范围为 **3.77%～89.80%**（中位数 **7.78%**），`rev_validated_rate` 范围为 **0.00%～85.71%**（中位数 **3.10%**），横截面分化极端：纯碱（SA）通过 RAREV 在 **85.71%** 的交易日生成有效反转观测，而玻璃（FG）和棉花（CF）的验证率仅为 **1.89%** 和 **3.10%**。在 HIGH 可靠性品种（SR）中，TSREV 均值活跃期极短仅 **1.3 天**（中位数 **1 天**），与快速均值回归一致；豆粕（M，TSREV，MEDIUM 可靠性）均值为 **10.7～12.3 天**（中位数 **6 天**），呈现慢周期反转结构。
+
+---
+
+## 2. Technical Anomalies, Activity Attenuation, and Post-Publication Decay in Commodity Futures / Market_Anomalies —— 商品期货技术分析异象、活跃度衰减与发表后衰减
 
 *   **Research Background / 研究背景**：
     *   Replicates and extends the core hypotheses of **Han et al. (2013)** (cross-sectional excess returns of technical indicators under high volatility), **Chordia et al. (2014)** (attenuation of capital market anomalies by liquidity and trading activity), and **McLean & Pontiff (2016)** (predictive return decay post academic publication and strategy selection) to test the stability of technical anomalies in the Chinese commodity futures market.
@@ -43,7 +66,7 @@ Currently, three core research modules and empirical analyses are complete, and 
 
 ---
 
-## 2. Volatility Modeling and Hong-Lee Spectral Adequacy Diagnostics / Volatility_Time_Series —— 波动率建模与 Hong-Lee 谱充分性检验
+## 3. Volatility Modeling and Hong-Lee Spectral Adequacy Diagnostics / Volatility_Time_Series —— 波动率建模与 Hong-Lee 谱充分性检验
 
 *   **Research Background / 研究背景**：
     *   Replicates and extends the generalized spectral test for volatility model adequacy proposed by **Hong & Lee (2017)**. Evaluates the finite-sample statistical properties and dynamic risk-control logic when scaling the original single-contract design to a multi-contract framework across Chinese commodity futures.
@@ -88,7 +111,7 @@ Currently, three core research modules and empirical analyses are complete, and 
 
 ---
 
-## 3. Multidimensional Valuation and Lower-Bound Pricing for Crypto Assets / Crypto_Pricing —— 加密资产多维度定价与下沿估值
+## 4. Multidimensional Valuation and Lower-Bound Pricing for Crypto Assets / Crypto_Pricing —— 加密资产多维度定价与下沿估值
 
 *   **Research Background / 研究背景**：
     *   Replicates and extends the core frameworks of **Bhambhwani et al. (2019, BDK)** (on-chain fundamentals and network value anchors), **Biais et al. (2023)** (equilibrium convenience yields and transaction friction discounts), and **Liu & Tsyvinski (2021)** (momentum and attention-based risks) to construct a cascade downside downside valuation system with adaptive downgrade and risk-control capabilities for crypto assets (BTC) lacking traditional cash flows.
@@ -128,7 +151,7 @@ Currently, three core research modules and empirical analyses are complete, and 
 
 ---
 
-## 4. Planned Research Modules and Future Directions / 四、 规划中研究模块与后续方向
+## 5. Planned Research Modules and Future Directions / 五、 规划中研究模块与后续方向
 
 The project will further explore the following two quantitative finance topics, progressively completing the replication and extension of relevant academic literature:
 
@@ -163,7 +186,7 @@ The project will further explore the following two quantitative finance topics, 
 
 ---
 
-## 5. Repository Directory Structure / 五、 目录结构说明
+## 6. Repository Directory Structure / 六、 目录结构说明
 
 ```text
 QuantStrat/
@@ -172,22 +195,22 @@ QuantStrat/
 ├── Commodity_Futures_Raw_Data/                        # Commodity futures raw price & feature panel data (27 symbols) / 商品期货原始价格与特征面板数据 (27个品种)
 │   ├── AG.csv, AL.csv, ...
 │   └── futures_panel.csv                              # Commodity futures cross-sectional main panel / 商品期货横截面主面板
-├── Market_Anomalies——市场异象/                        # Module 1: Technical anomalies, activity decay, post-pub decay / 模块一：技术异象、活跃度衰减与发表后衰减
+├── Market_Anomalies——市场异象/                        # Module 2: Technical anomalies, activity decay, post-pub decay / 模块二：技术异象、活跃度衰减与发表后衰减
 │   ├── 02_vol_sorted_technical_anomaly.ipynb          # Vol-sorted cross-sectional technical anomaly backtesting / 波动率排序横截面技术分析异象回测
 │   ├── 03_liquidity_attenuation.ipynb                 # Trading activity attenuation testing on anomalies / 交易活跃度对技术异象的削弱检验
 │   ├── 04_post_selection_decay.ipynb                  # Post-strategy selection OOS and pseudo-live decay tests / 策略选择后的样本外与伪实盘衰减测试
 │   ├── *.csv                                          # CSV files storing strategies and regression outcomes / 策略与回归的运行结果表
 │   └── README.md                                      # Module 1 detailed design & CSV findings document / 模块一详细设计与CSV发现文档
-├── Volatility_Time_Series——波动率&时间序列检验/       # Module 2: Volatility modeling & Hong-Lee spectral risk control / 模块二：波动率建模与 Hong-Lee 谱检验风控模块
+├── Volatility_Time_Series——波动率&时间序列检验/       # Module 3: Volatility modeling & Hong-Lee spectral risk control / 模块三：波动率建模与 Hong-Lee 谱检验风控模块
 │   ├── Traditional_Model_Selection_Sugar.ipynb        # Single contract replication & full pipeline diagnostic (Sugar SR) / 单合约复刻论文及全流程检验 (白糖主力)
 │   ├── hong_lee_20_contracts.ipynb                    # Multi-contract extension execution script (20 symbols) / 多合约拓展运行脚本 (20个商品期货主力)
 │   ├── *.csv                                          # 20-contract volatility models & spectral diagnostic tables / 20合约波动率建模与健康谱检验表
 │   └── README.md                                      # Module 2 detailed design, findings & risk control document / 模块二详细设计、CSV发现与风控逻辑文档
-├── Crypto_Pricing—— 加密货币定价/                     # Module 3: BTC multidimensional pricing & downside valuation / 模块三：BTC多维定价与下沿估值模块
+├── Crypto_Pricing—— 加密货币定价/                     # Module 4: BTC multidimensional pricing & downside valuation / 模块四：BTC多维定价与下沿估值模块
 │   ├── btc_unified_pricing_model/                     # Python core package / Python 核心模型包 (fetchers, validator, pricing)
 │   ├── tests/                                         # Unit testing module / 单元测试模块
 │   └── README.md                                      # Module 3 detailed design document / 模块三详细设计文档
-└── Momentum_Reversal_Trend-Following——动量&反转&趋势/ # Module 4: momentum, reversal, trend-following / 模块四：动量、反转与趋势跟踪
+└── Momentum_Reversal_Trend-Following——动量&反转&趋势/ # Module 1: momentum, reversal, trend-following / 模块一：动量、反转与趋势跟踪
     ├── Trend/                                         # Trend-following notebook and CSV outputs / 趋势跟踪 notebook 与 CSV 输出
     ├── Momentum/                                      # Momentum notebook and CSV outputs / 动量 notebook 与 CSV 输出
     ├── Reversal/                                      # Reversal notebook and CSV outputs / 反转 notebook 与 CSV 输出
