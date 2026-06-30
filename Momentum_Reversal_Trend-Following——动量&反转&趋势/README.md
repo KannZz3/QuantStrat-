@@ -92,7 +92,7 @@ r_t = \log(C_t / C_{t-1})
 $$
 
 $$
-\sigma_t = \text{RollingStd}_{20}(r_t)
+\sigma_t = \mathrm{RollingStd}_{20}(r_t)
 $$
 
 当 20 日滚动波动率尚不可用时，代码使用 EWMA 波动率作为 fallback。远期标准化收益：
@@ -110,7 +110,7 @@ $$
 其中 `TTrend_h` 为斜率 t 值，`TrendFit_h` 为 rolling OLS 的 $R^2$。趋势方向为：
 
 $$
-s^{trend}_{t,h} = \operatorname{sign}(TTrend_{t,h})
+s^{trend}_{t,h} = \mathrm{sign}(TTrend_{t,h})
 $$
 
 动量强度来自风险调整时间序列动量：
@@ -122,7 +122,7 @@ $$
 动量一致性：
 
 $$
-MCS_{t,J} = \frac{1}{J}\sum_{i=1}^{J}1\{\operatorname{sign}(r_{t-i})=\operatorname{sign}(RAMOM_{t,J})\}
+MCS_{t,J} = \frac{1}{J}\sum_{i=1}^{J}1\{\mathrm{sign}(r_{t-i})=\mathrm{sign}(RAMOM_{t,J})\}
 $$
 
 模型评分统一使用方向收益：
