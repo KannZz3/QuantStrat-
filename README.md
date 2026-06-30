@@ -190,6 +190,6 @@ QuantStrat/
 └── Momentum_Reversal_Trend-Following——动量&反转&趋势/ # Module 4: momentum, reversal, trend-following / 模块四：动量、反转与趋势跟踪
     ├── Trend/                                         # Trend-following notebook and CSV outputs / 趋势跟踪 notebook 与 CSV 输出
     ├── Momentum/                                      # Momentum notebook and CSV outputs / 动量 notebook 与 CSV 输出
-    ├── Reversal/                                      # Placeholder for reversal extension / 反转后续扩展目录
+    ├── Reversal/                                      # Reversal notebook and CSV outputs / 反转 notebook 与 CSV 输出
     └── README.md                                      # Module 4 detailed design & CSV findings document / 模块四详细设计与CSV发现文档
 ```
