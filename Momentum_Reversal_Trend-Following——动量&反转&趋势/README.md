@@ -1,43 +1,37 @@
 # Momentum, Reversal, and Trend-Following -- 动量、反转与趋势跟踪
 
-本目录研究中国商品期货主力连续合约中的 **Trend-Following / 趋势跟踪**、**Momentum / 时间序列动量** 与 **Reversal / 后续反转**。当前 README 只保留全局、全历史、逐标的结论；不再展示 2026-06-29 或 2026-06-30 的当前截面逐标的判断。
+本目录是 QuantStrat 中的商品期货趋势、动量与反转研究模块，围绕中国商品期货主力连续合约构建三类可复现的日频统计框架：**Trend-Following / 趋势跟踪**、**Momentum / 时间序列动量** 与 **Reversal / 后续反转**。研究对象为 11 个主力连续合约，数据、特征、模型筛选、状态机和结论表均由本目录下的三个 notebook 生成。
 
-> **重要口径**：本模块目前是**全样本历史研究总结**，不是 OOS、pseudo-live 或实时交易信号。模型选择、最佳窗口、状态识别和统计结论均基于全样本 CSV 结果，天然存在前置时间泄露和模型选择偏差。因此，下文只能解释“在当前 CSV 全样本内发生了什么”，不能被解读为样本外预测能力或实盘有效性。
+> **研究边界**：本模块当前定位为**全样本历史统计研究**。最佳窗口、模型质量分级、状态识别、episode duration 与结束概率均在完整历史样本上计算，尚未切分 in-sample / out-of-sample，也未进行 walk-forward 或 pseudo-live 验证。因此，本文档中的结论用于描述样本内历史结构和不同品种之间的经验差异，不构成实时交易信号或样本外预测结论。
 
 ---
 
 ## 一、研究定位
 
-本 README 回答九个全样本问题：
+本模块围绕三类问题展开，每一类均以“是否存在、持续多久、如何结束/消失”为主线：
 
-1. 全历史中，每个合约是否反复出现可识别趋势？
-2. 全历史中，趋势 episode 的典型持续时间是多少？
-3. 全历史中，趋势 episode 的结束概率是多少？
-4. 全历史中，每个合约是否存在可验证的时间序列动量？
-5. 全历史中，动量 episode 的典型持续时间是多少？
-6. 全历史中，动量 episode 的消失概率是多少？
-7. 全历史中，每个合约是否存在可验证的后续反转？
-8. 全历史中，反转 episode 的典型持续时间是多少？
-9. 全历史中，反转 episode 的结束概率是多少？
+1. **Trend-Following**：识别 rolling OLS 趋势状态，统计趋势 episode 的方向、持续时间和结束风险。
+2. **Momentum**：检验风险调整后的时间序列动量信号，统计 validated momentum episode 的方向、持续时间和消失概率。
+3. **Reversal**：检验收益过度延展后的反向修复效应，区分 TSREV、RAREV 和 FastREV 三类反转来源，并统计 validated reversal episode 的持续与结束。
 
 术语说明：
 
 - `CONFIRMED`：通过样本数、Newey-West t 值、hit rate 和 stationary bootstrap 的确认模型。
 - `CANDIDATE`：通过较低门槛的候选模型。
 - `DIAGNOSTIC_ONLY`：仅作诊断展示，不视为可验证模型。
-- `episode`：同方向、同来源的连续有效状态段。
-- `validated-active observations`：Reversal duration 的单位，表示反转 validated-active 状态内的观测数，不等同于自然日或保证持仓天数。
+- `episode`：同方向、同模型来源的连续有效状态段。
+- `validated-active observations`：Reversal duration 的单位，表示反转 validated-active 状态内的观测数；该单位不等同于自然日，也不能直接和 Trend / Momentum 的日历日 duration 横向比较。
 
 ---
 
 ## 二、核心文献对应关系
 
-本项目参考文献映射到四类研究设计：
+本项目参考文献对应四个设计层次：
 
-1. **动量与时间序列动量基础**：Jegadeesh and Titman (1993), Moskowitz, Ooi, and Pedersen (2012), Asness, Moskowitz, and Pedersen (2013), Hurst, Ooi, and Pedersen (2017) 支持“过去收益延续”和跨资产趋势/动量可检验性。
-2. **风险调整与波动率自适应动量**：Ammann, Moellenbeck, and Schmid (2011), Baltas and Kosowski (2012), Dudler, Gmuer, and Malamud (2014/2015), Karassavidis, Kateris, and Ioannidis (2025) 对应波动率标准化收益、Newey-West t 值、bootstrap 和模型质量分级。
-3. **技术规则与趋势状态切换**：Brock, Lakonishok, and LeBaron (1992), Lo, Mamaysky, and Wang (2000), Tayal (2009), Zakamulin and Giner (2022/2024) 对应 rolling OLS trend rule、状态机、episode duration 和结束风险。
-4. **反转、极端收益与多策略推断**：Caporale and Plastun (2020), Dobrynskaya (2021/2023), Li et al. (2021), Daniel and Moskowitz (2016), Newey and West (1987), Politis and Romano (1994), White (2000), Hansen (2005) 对应异常收益后的反转、动量崩盘风险与数据挖掘控制。
+1. **动量与时间序列动量基础**：Jegadeesh and Titman (1993), Moskowitz, Ooi, and Pedersen (2012), Asness, Moskowitz, and Pedersen (2013), Hurst, Ooi, and Pedersen (2017) 对应“过去收益延续”与跨资产趋势/动量可检验性。
+2. **风险调整与波动率自适应**：Ammann, Moellenbeck, and Schmid (2011), Baltas and Kosowski (2012), Dudler, Gmuer, and Malamud (2014/2015), Karassavidis, Kateris, and Ioannidis (2025) 对应波动率标准化收益、风险调整方向收益和模型分级。
+3. **技术规则与状态切换**：Brock, Lakonishok, and LeBaron (1992), Lo, Mamaysky, and Wang (2000), Tayal (2009), Zakamulin and Giner (2022/2024) 对应 rolling OLS trend rule、状态机、episode duration 和结束风险识别。
+4. **反转、极端收益与稳健推断**：Caporale and Plastun (2020), Dobrynskaya (2021/2023), Li et al. (2021), Daniel and Moskowitz (2016), Newey and West (1987), Politis and Romano (1994), White (2000), Hansen (2005) 对应异常收益后的反转、动量崩盘风险、Newey-West 调整和 bootstrap 推断。
 
 完整参考文献：
 
@@ -68,7 +62,7 @@
 
 ### 1. 标的与数据
 
-基础数据为天勤主力连续合约日线，三个 notebook 共用同一套 11 个品种：
+三个 notebook 共用同一套商品池。基础数据来自天勤主力连续合约日线，合约代码采用 `KQ.m@交易所.品种` 形式：
 
 | 代码 | 品种 | 天勤主力连续合约 | 样本起始过滤日 |
 | :--- | :--- | :--- | :--- |
@@ -84,23 +78,23 @@
 | SR | 白糖 | `KQ.m@CZCE.SR` | 2006-01-06 |
 | V | PVC | `KQ.m@DCE.v` | 2009-05-25 |
 
-核心代码：
+核心 notebook：
 
 - `Trend/Main_Continuous_Daily_Trend.ipynb`
 - `Momentum/Main_Continuous_Daily_Momentum.ipynb`
 - `Reversal/Main_Continuous_Daily_Reversal.ipynb`
 
-### 2. 全样本流程
+### 2. Notebook 执行流程
 
-1. 从天勤主力连续合约日线生成统一 panel。
-2. 清洗 OHLCV，计算对数收益、滚动波动率、EWMA fallback、标准化远期收益。
-3. 对 Trend / Momentum / Reversal 分别构造候选信号网格。
-4. 在全样本内计算方向收益、Newey-West t 值、hit rate、stationary bootstrap p 值。
-5. 在全样本内挑选每个品种的最佳模型。
-6. 基于最佳模型回填全历史状态、episode、duration 与 survival/end probability。
-7. 输出 `hist_*` CSV，并据此写出本 README 的逐标的结论。
+1. **数据获取与缓存**：通过 TqSdk `get_kline_serial(symbol, 86400, data_length=8000)` 抓取主力连续合约日线；天勤授权通过本地环境变量 `TQ_USERNAME` / `TQ_PASSWORD` 提供，原始日线缓存至 `main_continuous_daily_trend_momentum_reversal_research/raw/tq_main_continuous_daily/`。
+2. **日线标准化**：处理天勤 K 线时间戳，剔除无效 OHLCV，按品种起始过滤日截取样本；同一交易日多条记录时保留最后一条。
+3. **特征构造**：计算对数收益、20 日滚动波动率、EWMA 波动率 fallback、ATR、标准化远期收益、rolling OLS 趋势、风险调整动量和反转候选信号。
+4. **模型网格评估**：在候选窗口上计算方向收益、Newey-West t 值、hit rate 和 stationary bootstrap p 值。
+5. **品种内模型选择**：按 `CONFIRMED > CANDIDATE > DIAGNOSTIC_ONLY`，再按 `t_nw, mean_y, hit_rate, n` 排序，为每个品种选择一个主模型。
+6. **状态机与 episode 统计**：基于主模型回填全历史状态，生成存在/确立、duration、结束/消失概率三类历史 CSV。
+7. **文档汇总**：本文档仅解释 `hist_*` 输出的全样本历史结论；notebook 同步生成的 `*_current*` 文件用于运行诊断和截面检查，不作为本文档的逐标的结论依据。
 
-再次强调：第 4-6 步均使用全样本结果，因此本 README 不是样本外验证。
+由于模型选择和状态识别均使用完整历史样本，本文档中的“存在、持续、结束/消失概率”均为样本内经验统计。
 
 ---
 
@@ -212,9 +206,9 @@ $$
 
 ---
 
-## 五、CSV 结论依据
+## 五、历史输出文件
 
-本 README 的结论只使用以下全历史 CSV：
+本文档的逐标的结论基于以下全历史输出文件：
 
 | 方向 | Q1 存在 | Q2 持续 | Q3 结束/消失 |
 | :--- | :--- | :--- | :--- |
@@ -222,7 +216,7 @@ $$
 | Momentum | `momentum_hist_q1_existence_model.csv` | `momentum_hist_q2_duration_distribution.csv` | `momentum_hist_q3_end_risk_survival.csv` |
 | Reversal | `reversal_hist_q1_existence_model.csv` | `reversal_hist_q2_duration_distribution.csv` | `reversal_hist_q3_end_survival.csv` |
 
-`*_current*` 文件是 notebook 的当前截面运行产物，但不作为本 README 的逐标的结论依据。
+`*_current*` 文件为 notebook 的截面诊断产物，保留用于复跑检查；本文档不将其作为逐标的研究结论依据。
 
 ---
 
@@ -244,7 +238,7 @@ $$
 | SR 白糖 | 2016-01-05~2026-06-29; n=2544 | 存在 63.4%; 确立 61.8%; 主导 UP 51.4% | h=60,K=20, CANDIDATE, t=1.77, hit=50.7%, p=0.013 | UP: median 1d; mean 4.1d; episodes=197; ended=197; rel=HIGH | NO_RISK 5=55.4%/10=71.7%/20=91.8%<br>RISK 5=21.7%/10=32.6%/20=40.6% |
 | V PVC | 2016-01-05~2026-06-29; n=2544 | 存在 69.9%; 确立 65.1%; 主导 UP 50.3% | h=20,K=20, CANDIDATE, t=1.84, hit=53.4%, p=0.010 | UP: median 7d; mean 11.0d; episodes=76; ended=76; rel=HIGH | NO_RISK 5=41.0%/10=62.2%/20=83.6%<br>RISK 5=17.2%/10=45.1%/20=77.9% |
 
-全历史 Trend 的 CSV 事实：
+基于历史输出的 Trend 结论：
 
 - 11 个合约的趋势确立频率均超过 50%，说明趋势状态在全样本内普遍存在。
 - `CONFIRMED` 趋势模型：AG、EB、LH、MA。`CANDIDATE`：CF、FG、SA、SP、SR、V。`DIAGNOSTIC_ONLY`：M。
@@ -271,7 +265,7 @@ $$
 | SR 白糖 | 2016-01-05~2026-06-30; n=2545 | 信号 31.7%; 验证确立 0.0%; 无验证确立方向 | J=2,K=2, DIAGNOSTIC_ONLY, t=1.34, hit=48.8%, p=0.080 | 验证确立=0; 无可统计 episode | 验证确立=0; 不适用 |
 | V PVC | 2016-01-05~2026-06-30; n=2545 | 信号 51.9%; 验证确立 31.7%; 主导 UP 51.3% | J=3,K=1, CONFIRMED, t=2.16, hit=50.9%, p=0.015 | UP: median 2d; mean 2.6d; episodes=162; ended=162; rel=HIGH | NO_RISK 5=96.1%/10=99.3%/20=100.0%<br>RISK 5=92.7%/10=100.0%/20=100.0% |
 
-全历史 Momentum 的 CSV 事实：
+基于历史输出的 Momentum 结论：
 
 - 9 个合约出现过验证确立动量；MA、SR 的验证确立频率为 0，不能形成可统计 episode。
 - `CONFIRMED` 动量模型：AG、CF、EB、FG、SA、SP、V。`CANDIDATE`：LH、M。`DIAGNOSTIC_ONLY`：MA、SR。
@@ -298,7 +292,7 @@ $$
 | SR 白糖 | 2016-01-05~2026-06-30; n=2545 | 信号 30.4%; 验证确立 12.0%; 主导 UP 53.8% | TSREV, J=2,K=10, CONFIRMED, t=2.40, hit=53.1%, p=0.005 | UP/TSREV: median 1.0 obs; mean 1.3 obs; episodes=123; ended=123; rel=HIGH | 1obs=75.0%/5obs=100.0%/10obs=100.0%/20obs=100.0% |
 | V PVC | 2016-01-05~2026-06-30; n=2545 | 信号 32.2%; 验证确立 28.6%; 主导 UP 52.8% | TSREV, J=60,K=20, CANDIDATE, t=1.17, hit=59.2%, p=0.140 | UP/TSREV: median 7.5 obs; mean 12.3 obs; episodes=31; ended=30; rel=MEDIUM | 1obs=7.8%/5obs=30.6%/10obs=51.6%/20obs=75.4% |
 
-全历史 Reversal 的 CSV 事实：
+基于历史输出的 Reversal 结论：
 
 - 9 个合约出现过验证确立反转；EB、LH 的验证确立频率为 0，不能形成可统计 reversal episode。
 - `CONFIRMED` 反转模型：M、SR。`CANDIDATE`：AG、CF、FG、MA、SA、SP、V。`DIAGNOSTIC_ONLY`：EB、LH。
